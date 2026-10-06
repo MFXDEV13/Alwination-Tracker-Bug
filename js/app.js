@@ -1,18 +1,5 @@
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  limit,
-  onSnapshot,
-  query,
-  runTransaction,
-  serverTimestamp,
-  setDoc,
-  writeBatch,
-} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import { auth, db } from './firebase-client.js';
+import { auth } from './firebase-client.js';
 import { ADMIN_EMAILS } from './firebase-config.js';
 
 /* =========================================================
@@ -24,8 +11,6 @@ import { ADMIN_EMAILS } from './firebase-config.js';
 const STATUSES   = ['Baru', 'Dikonfirmasi', 'Dikerjakan', 'Selesai'];
 const PRIORITIES = ['Kritis', 'Tinggi', 'Sedang', 'Rendah'];   // urut dari paling parah
 const CATEGORIES = ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka'];
-const REALMS     = ['Realm 1', 'Realm 2', 'Realm 3', 'Realm 4', 'Realm 5', 'Realm 6'];   // ganti dengan realm aslimu
-
 let REPORTS = [];
 
 /* ---------- 2) Helper ---------- */
@@ -39,8 +24,8 @@ const fillSelect = (select, placeholder, items) => {
 };
 
 function relativeTime(timestamp) {
-  const date = timestamp?.toDate?.();
-  if (!date) return 'Baru saja';
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp?.toDate?.() || timestamp);
+  if (Number.isNaN(date.getTime())) return 'Baru saja';
   const minutes = Math.max(0, Math.floor((Date.now() - date.getTime()) / 60000));
   if (minutes < 1) return 'Baru saja';
   if (minutes < 60) return `${minutes} menit lalu`;
@@ -52,13 +37,37 @@ function relativeTime(timestamp) {
 }
 
 function formatDate(timestamp) {
-  return timestamp?.toDate?.().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) || '—';
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp?.toDate?.() || timestamp);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function timestampMillis(timestamp) {
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp?.toDate?.() || timestamp);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+async function apiRequest(path, options = {}) {
+  const user = auth.currentUser;
+  if (!user) throw Object.assign(new Error('Silakan masuk kembali.'), { status: 401 });
+  const token = await user.getIdToken();
+  const response = await fetch(path, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...options.headers,
+    },
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(result.error || 'Permintaan ke server gagal.'), { status: response.status });
+  return result;
 }
 
 function reportErrorMessage(error) {
-  if (error.code === 'permission-denied') return 'Akses Firestore ditolak. Periksa Firestore Rules dan akun yang sedang masuk.';
-  if (error.code === 'unavailable') return 'Firestore tidak dapat dijangkau. Periksa koneksi internet.';
-  return 'Firestore belum siap. Buat database Firestore di Firebase Console, lalu deploy firestore.rules.';
+  if (error.status === 401) return 'Sesi login berakhir. Silakan masuk kembali.';
+  if (error.status === 403) return 'Akun ini tidak diizinkan melakukan tindakan tersebut.';
+  if (error instanceof TypeError) return 'API belum dapat dijangkau. Jalankan melalui Vercel atau periksa deployment API.';
+  return error.message || 'MongoDB API gagal memproses permintaan.';
 }
 
 let toastTimer;
@@ -171,8 +180,8 @@ function initDashboard() {
       (!state.category || r.category === state.category) &&
       (!q || `${r.ticketId} ${r.title} ${r.author}`.toLowerCase().includes(q)));
 
-    if (state.sort === 'oldest') items.sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
-    else items.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+    if (state.sort === 'oldest') items.sort((a, b) => timestampMillis(a.createdAt) - timestampMillis(b.createdAt));
+    else items.sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt));
     if (state.sort === 'priority') items.sort((a, b) => PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
 
     const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
@@ -187,8 +196,7 @@ function initDashboard() {
       : reportsReady ? 'Menampilkan 0 laporan' : 'Memuat…';
     $('#report-total').textContent = `(${items.length})`;
     const newestReport = [...REPORTS].sort((a, b) =>
-      (b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0)
-      - (a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0))[0];
+      timestampMillis(b.updatedAt || b.createdAt) - timestampMillis(a.updatedAt || a.createdAt))[0];
     $('#dashboard-updated').textContent = newestReport
       ? `Diperbarui ${relativeTime(newestReport.updatedAt || newestReport.createdAt)}`
       : reportsReady ? 'Belum ada laporan' : 'Memuat data Firebase…';
@@ -196,7 +204,7 @@ function initDashboard() {
       $(`.stat[data-v="${status}"] .stat__num`).textContent = String(REPORTS.filter(report => report.status === status).length);
     }
     const latest = [...REPORTS]
-      .sort((a, b) => (b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0))
+      .sort((a, b) => timestampMillis(b.updatedAt || b.createdAt) - timestampMillis(a.updatedAt || a.createdAt))
       .slice(0, 3);
     $('#latest-updates').innerHTML = latest.length ? latest.map(report => `
       <li>
@@ -241,17 +249,22 @@ function initDashboard() {
     render();
   });
 
-  onSnapshot(collection(db, 'reports'), snapshot => {
-    REPORTS = snapshot.docs.map(reportDoc => ({ id: reportDoc.id, ...reportDoc.data() }));
-    reportsReady = true;
-    state.page = 1;
-    render();
-  }, error => {
-    reportsReady = true;
-    list.innerHTML = `<p class="empty">${esc(reportErrorMessage(error))}</p>`;
-    $('#count').textContent = 'Gagal memuat laporan';
-    toast(reportErrorMessage(error));
-  });
+  async function loadReports() {
+    try {
+      const result = await apiRequest('/api/reports');
+      REPORTS = result.reports || [];
+      reportsReady = true;
+      state.page = 1;
+      render();
+    } catch (error) {
+      reportsReady = true;
+      list.innerHTML = `<p class="empty">${esc(reportErrorMessage(error))}</p>`;
+      $('#count').textContent = 'Gagal memuat laporan';
+      toast(reportErrorMessage(error));
+    }
+  }
+  loadReports();
+  window.addEventListener('focus', loadReports);
 
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -290,13 +303,12 @@ function initDetail() {
   const reportId = new URLSearchParams(location.search).get('id');
   const submitButton = $('button[type="submit"]', form);
   const deleteButton = $('#delete-report');
-  const reportReference = reportId ? doc(db, 'reports', reportId) : null;
 
   onAuthStateChanged(auth, user => {
     deleteButton.hidden = !user?.emailVerified || !ADMIN_EMAILS.includes(user.email?.toLowerCase());
   });
 
-  if (!reportReference) {
+  if (!reportId) {
     $('#report-title').textContent = 'Laporan tidak ditemukan.';
     $('#report-meta').textContent = 'Buka laporan dari daftar dashboard.';
     form.hidden = true;
@@ -310,15 +322,7 @@ function initDetail() {
 
     deleteButton.disabled = true;
     try {
-      const comments = collection(db, 'reports', reportId, 'comments');
-      while (true) {
-        const commentsSnapshot = await getDocs(query(comments, limit(400)));
-        if (commentsSnapshot.empty) break;
-        const batch = writeBatch(db);
-        commentsSnapshot.docs.forEach(comment => batch.delete(comment.ref));
-        await batch.commit();
-      }
-      await deleteDoc(reportReference);
+      await apiRequest(`/api/reports/${encodeURIComponent(reportId)}`, { method: 'DELETE' });
       location.replace('index.html#laporan');
     } catch (error) {
       console.error('Gagal menghapus laporan:', error);
@@ -327,15 +331,16 @@ function initDetail() {
     }
   });
 
-  onSnapshot(reportReference, snapshot => {
-    if (!snapshot.exists()) {
+  async function loadReport() {
+    try {
+      const { report } = await apiRequest(`/api/reports/${encodeURIComponent(reportId)}`);
+      if (!report) {
       $('#report-title').textContent = 'Laporan tidak ditemukan.';
       $('#report-meta').textContent = 'Laporan mungkin telah dihapus atau tautannya tidak valid.';
       form.hidden = true;
       return;
     }
 
-    const report = snapshot.data();
     const ticketId = report.ticketId || `ALW-${reportId.slice(0, 8).toUpperCase()}`;
     const statusText = report.status || 'Baru';
     const priorityText = report.priority || 'Sedang';
@@ -384,48 +389,47 @@ function initDetail() {
     $('#info-coords').textContent = report.coords || '—';
     $('#info-frequency').textContent = report.frequency || '—';
     $('#report-history').innerHTML = `<li><strong>${esc(statusText)}</strong><small>${esc(author)} · ${esc(createdDate)}</small></li>`;
-  }, error => {
-    $('#report-title').textContent = reportErrorMessage(error);
-    form.hidden = true;
-  });
+    } catch (error) {
+      $('#report-title').textContent = reportErrorMessage(error);
+      form.hidden = true;
+    }
+  }
+  loadReport();
 
-  onSnapshot(collection(db, 'reports', reportId, 'comments'), snapshot => {
-    const comments = snapshot.docs.map(commentDoc => commentDoc.data())
-      .sort((a, b) => (a.createdAt?.toMillis?.() || 0) - (b.createdAt?.toMillis?.() || 0));
-    $('#comments').innerHTML = comments.map(comment => {
-      const author = comment.author || 'Pengguna';
-      const initials = author.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
-      return `<article class="comment">
-        <span class="avatar">${esc(initials)}</span>
-        <div>
-          <div class="comment__head"><strong>${esc(author)}</strong><time>${esc(formatDate(comment.createdAt))}</time></div>
-          <p>${esc(comment.body || '')}</p>
-        </div>
-      </article>`;
-    }).join('') || '<p class="muted">Belum ada komentar.</p>';
-    $('#comment-count').textContent = `${comments.length} komentar`;
-  }, error => toast(reportErrorMessage(error)));
+  async function loadComments() {
+    try {
+      const { comments } = await apiRequest(`/api/reports/${encodeURIComponent(reportId)}/comments`);
+      $('#comments').innerHTML = comments.map(comment => {
+        const author = comment.author || 'Pengguna';
+        const initials = author.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+        return `<article class="comment">
+          <span class="avatar">${esc(initials)}</span>
+          <div>
+            <div class="comment__head"><strong>${esc(author)}</strong><time>${esc(formatDate(comment.createdAt))}</time></div>
+            <p>${esc(comment.body || '')}</p>
+          </div>
+        </article>`;
+      }).join('') || '<p class="muted">Belum ada komentar.</p>';
+      $('#comment-count').textContent = `${comments.length} komentar`;
+    } catch (error) {
+      toast(reportErrorMessage(error));
+    }
+  }
+  loadComments();
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
     const body = form.elements.body.value.trim();
     if (!body) return;
     submitButton.disabled = true;
-    const commentReference = doc(collection(db, 'reports', reportId, 'comments'));
     try {
-      await runTransaction(db, async transaction => {
-        const reportSnapshot = await transaction.get(reportReference);
-        if (!reportSnapshot.exists()) throw new Error('report-not-found');
-        const comments = Number(reportSnapshot.data().comments) || 0;
-        transaction.set(commentReference, {
-          body,
-          author: auth.currentUser?.displayName || auth.currentUser?.email || 'Pengguna',
-          authorEmail: auth.currentUser?.email || '',
-          createdAt: serverTimestamp(),
-        });
-        transaction.update(reportReference, { comments: comments + 1, updatedAt: serverTimestamp() });
+      await apiRequest(`/api/reports/${encodeURIComponent(reportId)}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ body }),
       });
       form.reset();
+      await loadComments();
+      await loadReport();
     } catch (error) {
       console.error('Gagal menyimpan komentar:', error);
       toast(reportErrorMessage(error));
@@ -442,7 +446,6 @@ function initReportForm() {
 
   fillSelect(form.elements.category, 'Pilih kategori', CATEGORIES);
   fillSelect(form.elements.priority, 'Pilih tingkat keparahan', [...PRIORITIES].reverse());
-  fillSelect(form.elements.realm, 'Pilih realm', REALMS);
 
   // --- Draf: simpan & pulihkan isian lewat localStorage ---
   const textFields = [...form.elements].filter(el => el.name && el.type !== 'checkbox');
@@ -472,20 +475,12 @@ function initReportForm() {
       for (const [key, value] of Object.entries(report)) {
         if (typeof value === 'string') report[key] = value.trim();
       }
-      const reference = doc(collection(db, 'reports'));
-      const ticketId = `ALW-${reference.id.slice(0, 8).toUpperCase()}`;
-      await setDoc(reference, {
-        ...report,
-        ticketId,
-        author: auth.currentUser?.displayName || auth.currentUser?.email || 'Pengguna',
-        authorEmail: auth.currentUser?.email || '',
-        status: 'Baru',
-        comments: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      const result = await apiRequest('/api/reports', {
+        method: 'POST',
+        body: JSON.stringify(report),
       });
       localStorage.removeItem(DRAFT_KEY);
-      location.assign(`laporan.html?id=${encodeURIComponent(reference.id)}`);
+      location.assign(`laporan.html?id=${encodeURIComponent(result.report.id)}`);
     } catch (error) {
       console.error('Gagal menyimpan laporan:', error);
       toast(reportErrorMessage(error));

@@ -1,0 +1,49 @@
+import { ObjectId } from 'mongodb';
+import { requireTrustedUser } from '../_lib/auth.js';
+import { getDatabase } from '../_lib/mongo.js';
+import { serializeDocument, sendServerError, validateReport } from '../_lib/reports.js';
+
+export default async function handler(req, res) {
+  const user = await requireTrustedUser(req, res);
+  if (!user) return;
+
+  try {
+    const reports = (await getDatabase()).collection('reports');
+
+    if (req.method === 'GET') {
+      const documents = await reports.find({}).sort({ createdAt: -1 }).limit(1000).toArray();
+      res.status(200).json({ reports: documents.map(serializeDocument) });
+      return;
+    }
+
+    if (req.method === 'POST') {
+      const validated = validateReport(req.body || {});
+      if (typeof validated === 'string') {
+        res.status(400).json({ error: validated });
+        return;
+      }
+
+      const id = new ObjectId();
+      const now = new Date();
+      const report = {
+        _id: id,
+        ...validated,
+        ticketId: `ALW-${id.toHexString().slice(-8).toUpperCase()}`,
+        author: user.name || user.email,
+        authorEmail: user.email,
+        status: 'Baru',
+        comments: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await reports.insertOne(report);
+      res.status(201).json({ report: serializeDocument(report) });
+      return;
+    }
+
+    res.setHeader('Allow', 'GET, POST');
+    res.status(405).json({ error: 'Method not allowed.' });
+  } catch (error) {
+    sendServerError(res, error);
+  }
+}

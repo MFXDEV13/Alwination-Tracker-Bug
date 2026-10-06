@@ -1,0 +1,12 @@
+{
+  "name": "alwination-bug-tracker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx vercel dev"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0",
+    "mongodb": "^6.19.0"
+  }
+}

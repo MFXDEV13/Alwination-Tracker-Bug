@@ -1,15 +1,24 @@
-# Firebase Authentication Setup
+# MongoDB and Vercel Setup
 
-The login scaffold uses Google Sign-In and currently allows only `azwarptk5@gmail.com`. This account is also the only admin and can delete reports.
+MongoDB is accessed only by the Vercel API under `api/`. The browser continues to use Firebase Google Sign-In; each API request includes a Firebase ID token, which the server verifies before accessing MongoDB.
 
-1. The app is configured for the Firebase project `alwination-tracker`; confirm that this is the intended project in Firebase Console.
-2. The Web app values are already populated in `js/firebase-config.js`. They are client configuration, not service-account secrets.
-3. In Firebase Console, open **Authentication** and select **Get started** if prompted. Then enable Google under **Sign-in method** and add the app's host (for local testing, `localhost`) under **Settings > Authorized domains**.
-4. Create a Firestore database in the same region you intend to use, then deploy its rules: `firebase deploy --only firestore:rules`.
-5. To authorize another non-admin email, add it to `TRUSTED_EMAILS` in `js/firebase-config.js` and `isTrusted()` in `firestore.rules`. To grant admin deletion rights, also add it to `ADMIN_EMAILS` and `isAdmin()` in those files. Redeploy the rules after changing them.
+## Rotate credentials first
 
-Do not place a service-account key in this static project. The browser-side email check only controls the interface; Firestore Rules are the security boundary for database access.
+The MongoDB URI was shared in chat. Rotate that database user's password in MongoDB Atlas before using the integration. Do not put the URI, Firebase service-account JSON, or any private key in frontend files or commit them to Git.
 
-Reports and comments are now read from and written to Firestore. The first dashboard load is empty until reports are submitted; the former example reports were not imported because they were demo data. Login is a client-side display gate, while Firestore Rules enforce data access. Do not put private report data back into static HTML or JavaScript.
+## Local development
 
-The site itself is still deployed separately through Firebase Hosting. To publish it after reviewing the public files, run `firebase deploy --only hosting` from the project root.
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local`.
+3. Set `MONGODB_URI` to the newly rotated connection URI and set `MONGODB_DB` to the database name you want to use.
+4. In Firebase Console, create a service account for the `alwination-tracker` project. Put its JSON in the `FIREBASE_SERVICE_ACCOUNT` environment variable as one JSON value. Never commit that value.
+5. Set `TRUSTED_EMAILS` and `ADMIN_EMAILS` as comma-separated addresses. The admin list controls report deletion.
+6. Start the app with `npm run dev` and open the local URL printed by Vercel.
+
+## Vercel deployment
+
+Import this repository into Vercel and set `MONGODB_URI`, `MONGODB_DB`, `FIREBASE_SERVICE_ACCOUNT`, `TRUSTED_EMAILS`, and `ADMIN_EMAILS` in Project Settings > Environment Variables. Redeploy after changing environment variables. Keep MongoDB Atlas Network Access restricted to the chosen Vercel connection method; do not expose the database to all IP addresses as a shortcut.
+
+Firebase Authentication must keep Google Sign-In enabled and include the deployed Vercel domain in Authorized Domains. `firebase.json` and `firestore.rules` are no longer used by this MongoDB API deployment.
+
+The old hard-coded demo reports were not imported. Reports are created in the MongoDB `reports` collection; comments are stored separately in `comments` so deleting a report can clean them up without embedding an ever-growing list in one document.
