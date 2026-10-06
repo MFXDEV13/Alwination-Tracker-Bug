@@ -121,8 +121,6 @@ function renderShell() {
     </a>
     <nav class="topbar__nav">
       <a class="is-active" href="index.html">Pelacak bug</a>
-      <a href="#">Panduan server</a>
-      <a href="#">Komunitas</a>
     </nav>
     <div class="topbar__right">
       <div class="notif">
@@ -153,8 +151,8 @@ function renderShell() {
     <div>
       <p class="nav-label">Personal</p>
       <div class="nav-group">
-        ${navLink({ label: 'Laporan saya',   ico: 'user',     href: '#' })}
-        ${navLink({ label: 'Laporan dikuti', ico: 'bookmark', href: '#' })}
+        ${navLink({ label: 'Laporan saya',   ico: 'user',     href: 'index.html#mine' })}
+        <a class="nav-item" id="followed-nav" href="index.html#followed">${icon('bookmark')}<span>Laporan diikuti</span><span class="count" id="followed-count" hidden></span></a>
       </div>
     </div>
     <div class="side-card" id="server-card">
@@ -167,12 +165,12 @@ function renderShell() {
     <div class="side-card">
       <strong>Butuh bantuan?</strong>
       Baca panduan sebelum mengirim laporan.
-      <a href="#">Lihat panduan →</a>
+      <a href="panduan.html">Lihat panduan →</a>
     </div>`;
 
   $('#footer').innerHTML = `
     <span>© 2026 Alwination. Dibangun bersama komunitas.</span>
-    <nav><a href="#">Aturan pelaporan</a><a href="#">Bantuan</a><a href="#">Privasi</a></nav>`;
+    <nav><a href="#">Aturan pelaporan</a><a href="panduan.html">Bantuan</a><a href="#">Privasi</a></nav>`;
 }
 
 /* ---------- 4) Dashboard: cari, filter, urutkan ---------- */
@@ -181,8 +179,13 @@ function initDashboard() {
   const list = $('#report-list');
   const pager = $('.pager__pages');
   const pageSize = 5;
-  const state = { q: '', status: '', priority: '', category: '', sort: 'newest', page: 1 };
+  const state = { q: '', status: '', priority: '', category: '', sort: 'newest', page: 1, view: viewFromHash() };
   let reportsReady = false;
+
+  function viewFromHash() {
+    const hash = location.hash.replace(/^#/, '');
+    return ['mine', 'followed'].includes(hash) ? hash : 'all';
+  }
 
   fillSelect($('[name=status]', toolbar),   'Semua status',    STATUSES);
   fillSelect($('[name=priority]', toolbar), 'Semua prioritas', PRIORITIES);
@@ -202,7 +205,10 @@ function initDashboard() {
 
   function render() {
     const q = state.q.trim().toLowerCase();
+    const mineEmail = PROFILE?.email || '';
     const items = REPORTS.filter(r =>
+      (state.view !== 'mine' || (r.authorEmail || '').toLowerCase() === mineEmail) &&
+      (state.view !== 'followed' || r.followed === true) &&
       (!state.status   || r.status === state.status) &&
       (!state.priority || r.priority === state.priority) &&
       (!state.category || r.category === state.category) &&
@@ -217,12 +223,28 @@ function initDashboard() {
     const start = (state.page - 1) * pageSize;
     const visibleItems = items.slice(start, start + pageSize);
 
+    const emptyText = {
+      mine: 'Kamu belum melaporkan apa pun.',
+      followed: 'Belum ada laporan yang diikuti. Buka halaman laporan dan klik "Ikuti laporan".',
+      all: 'Belum ada laporan yang cocok.',
+    }[state.view];
     list.innerHTML = visibleItems.length ? visibleItems.map(rowHTML).join('')
-      : `<p class="empty">${reportsReady ? 'Belum ada laporan yang cocok.' : 'Memuat laporan dari Firebase…'}</p>`;
+      : `<p class="empty">${reportsReady ? emptyText : 'Memuat laporan dari Firebase…'}</p>`;
     $('#count').textContent = items.length
       ? `Menampilkan ${start + 1}–${start + visibleItems.length} dari ${items.length} laporan`
       : reportsReady ? 'Menampilkan 0 laporan' : 'Memuat…';
-    $('#report-total').textContent = `(${items.length})`;
+    const listTitle = $('#list-title');
+    if (listTitle) listTitle.innerHTML = `${{
+      mine: 'Laporan saya', followed: 'Laporan diikuti', all: 'Semua laporan',
+    }[state.view]} <span class="muted" id="report-total">(${items.length})</span>`;
+    const viewAll = $('#view-all');
+    if (viewAll) viewAll.hidden = state.view === 'all';
+    const followedCountEl = $('#followed-count');
+    const followedCount = REPORTS.filter(report => report.followed === true).length;
+    if (followedCountEl) {
+      followedCountEl.hidden = followedCount === 0;
+      followedCountEl.textContent = followedCount > 99 ? '99+' : String(followedCount);
+    }
     const newestReport = [...REPORTS].sort((a, b) =>
       timestampMillis(b.updatedAt || b.createdAt) - timestampMillis(a.updatedAt || a.createdAt))[0];
     $('#dashboard-updated').textContent = newestReport
@@ -277,6 +299,13 @@ function initDashboard() {
     render();
   });
 
+  window.addEventListener('hashchange', () => {
+    state.view = viewFromHash();
+    state.page = 1;
+    render();
+  });
+  window.addEventListener('profile:ready', render);
+
   async function loadReports() {
     try {
       const result = await apiRequest('/api/reports');
@@ -312,9 +341,28 @@ function initDashboard() {
 /* ---------- 5) Detail laporan ---------- */
 function initDetail() {
   const follow = $('#follow');
-  follow.addEventListener('click', () => {
-    const on = follow.classList.toggle('is-on');
-    $('span', follow).textContent = on ? 'Mengikuti' : 'Ikuti laporan';
+  const setFollowUI = on => {
+    follow.classList.toggle('is-on', on);
+    const label = $('span', follow);
+    if (label) label.textContent = on ? 'Mengikuti' : 'Ikuti laporan';
+  };
+  follow.addEventListener('click', async () => {
+    const reportId = new URLSearchParams(location.search).get('id');
+    if (!reportId || follow.disabled) return;
+    const target = !follow.classList.contains('is-on');
+    follow.disabled = true;
+    try {
+      const { followed } = await apiRequest(`/api/reports/${encodeURIComponent(reportId)}/follow`, {
+        method: 'POST',
+        body: JSON.stringify({ follow: target }),
+      });
+      setFollowUI(!!followed);
+      toast(followed ? 'Laporan diikuti.' : 'Berhenti mengikuti laporan.');
+    } catch (error) {
+      toast(reportErrorMessage(error));
+    } finally {
+      follow.disabled = false;
+    }
   });
 
   const meToo = $('#me-too');
@@ -376,6 +424,8 @@ function initDetail() {
     const priorityText = report.priority || 'Sedang';
     const author = report.author || 'Pengguna';
     const createdDate = formatDate(report.createdAt);
+
+    setFollowUI(report.followed === true);
 
     $('#report-ticket').textContent = ticketId;
     $('#breadcrumb-ticket').textContent = ticketId;
@@ -546,19 +596,30 @@ function staggerEntrance() {
 }
 
 /* Posisi pengguna dari server (sumber kebenaran akses) */
+let PROFILE_STATE = 'idle';   // 'idle' | 'ready' | 'failed'
+let profilePromise;
+
 async function loadProfile() {
-  try {
-    const { profile } = await apiRequest('/api/me');
-    PROFILE = profile;
-  } catch (error) {
-    if (!loadProfile.retried) {
-      loadProfile.retried = true;
-      setTimeout(loadProfile, 1500);
-      return;
+  if (profilePromise) return profilePromise;
+  profilePromise = (async () => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const { profile } = await apiRequest('/api/me');
+        PROFILE = profile;
+        PROFILE_STATE = 'ready';
+        return profile;
+      } catch (error) {
+        if (attempt === 0) await new Promise(resolve => setTimeout(resolve, 1500));
+      }
     }
     PROFILE = null;
-  }
+    PROFILE_STATE = 'failed';
+    return null;
+  })();
+  const profile = await profilePromise;
   updateAdminUI();
+  window.dispatchEvent(new Event('profile:ready'));
+  return profile;
 }
 
 function isAdmin() {
@@ -572,22 +633,9 @@ function updateAdminUI() {
   if (deleteButton) deleteButton.hidden = !isAdmin();
   if (document.body.dataset.page !== 'admin') return;
 
-  // PROFILE null = status belum diketahui (fetch gagal/transien) → jangan tindih apa pun,
-  // redirect hanya dilakukan saat server PASTI membalas bukan-admin.
-  const guard = $('#admin-guard');
-  if (guard) guard.hidden = !PROFILE || isAdmin();
-  if (guard && PROFILE && !isAdmin()) {
-    const emailEl = guard.querySelector('[data-email]');
-    if (emailEl) emailEl.textContent = PROFILE.email || '';
-    const levelEl = guard.querySelector('[data-level]');
-    if (levelEl) levelEl.textContent = PROFILE.accessLevel || 'tidak diketahui';
-  }
-  if (PROFILE && !isAdmin()) {
-    clearTimeout(updateAdminUI.redirectTimer);
-    updateAdminUI.redirectTimer = setTimeout(() => {
-      if (PROFILE && !isAdmin()) location.replace('index.html');
-    }, 5000);
-  }
+  // Redirect seketika hanya saat server PASTI membalas (ready) dan akun bukan admin.
+  // Status 'idle'/'failed' = belum pasti → diam, admin asli tidak pernah diusir.
+  if (PROFILE_STATE === 'ready' && !isAdmin()) location.replace('index.html');
 }
 
 /* ---------- Notifikasi bell ---------- */
@@ -729,7 +777,9 @@ async function initAdminReports() {
   }
 }
 
-function initAdmin() {
+async function initAdmin() {
+  if (PROFILE_STATE !== 'ready') await loadProfile();
+  if (PROFILE_STATE !== 'ready' || !isAdmin()) { location.replace('index.html'); return; }
   initAdminReports();
 
   const list = $('#admin-reports');

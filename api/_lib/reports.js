@@ -21,6 +21,12 @@ export function serializeDocument(document) {
   return { ...fields, id: String(_id) };
 }
 
+export async function getFollowedReportIds(database, email) {
+  if (!email) return new Set();
+  const docs = await database.collection('follows').find({ email }).project({ reportId: 1 }).toArray();
+  return new Set(docs.map(doc => doc.reportId));
+}
+
 export function validateReport(data) {
   const text = (value, min, max) => typeof value === 'string' && value.trim().length >= min && value.length <= max;
   let evidenceLink = '';

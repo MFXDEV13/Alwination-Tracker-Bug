@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { requireTrustedUser } from '../_lib/auth.js';
 import { getDatabase } from '../_lib/mongo.js';
-import { serializeDocument, sendServerError, validateReport } from '../_lib/reports.js';
+import { getFollowedReportIds, serializeDocument, sendServerError, validateReport } from '../_lib/reports.js';
 
 export default async function handler(req, res) {
   const user = await requireTrustedUser(req, res);
@@ -11,8 +11,11 @@ export default async function handler(req, res) {
     const reports = (await getDatabase()).collection('reports');
 
     if (req.method === 'GET') {
+      const followedIds = await getFollowedReportIds(await getDatabase(), user.email);
       const documents = await reports.find({}).sort({ createdAt: -1 }).limit(1000).toArray();
-      res.status(200).json({ reports: documents.map(serializeDocument) });
+      res.status(200).json({
+        reports: documents.map(report => ({ ...serializeDocument(report), followed: followedIds.has(String(report._id)) })),
+      });
       return;
     }
 

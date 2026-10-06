@@ -1,6 +1,6 @@
 import { requireAdmin, requireTrustedUser } from '../_lib/auth.js';
 import { getDatabase, getMongoClient } from '../_lib/mongo.js';
-import { parseReportId, sendServerError, serializeDocument, STATUSES } from '../_lib/reports.js';
+import { getFollowedReportIds, parseReportId, sendServerError, serializeDocument, STATUSES } from '../_lib/reports.js';
 
 export default async function handler(req, res) {
   const user = ['DELETE', 'PATCH'].includes(req.method)
@@ -24,7 +24,8 @@ export default async function handler(req, res) {
         res.status(404).json({ error: 'Laporan tidak ditemukan.' });
         return;
       }
-      res.status(200).json({ report: serializeDocument(report) });
+      const followedIds = await getFollowedReportIds(database, user.email);
+      res.status(200).json({ report: { ...serializeDocument(report), followed: followedIds.has(String(id)) } });
       return;
     }
 

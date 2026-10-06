@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panduan melapor — Alwination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/auth.js"></script>
+</head>
+<body class="auth-pending" data-nav="guide">
+  <header class="topbar" id="topbar"></header>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">Alwination / Panduan</p>
+          <h1>Panduan melaporkan bug</h1>
+          <p>Laporan yang jelas dan lengkap mempercepat perbaikan. Ikuti panduan ini sebelum mengirim laporan.</p>
+        </div>
+      </div>
+
+      <div class="notice">
+        <i data-lucide="search"></i>
+        <p><strong>Cek dulu sebelum melapor.</strong> Bug yang sama mungkin sudah ada di daftar laporan.</p>
+        <a href="index.html#laporan">Cari laporan →</a>
+      </div>
+
+      <div class="layout">
+        <div class="stack">
+
+          <section class="card" id="summary">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="bug"></i></span>
+              <div><h2>Sebelum melapor</h2><p>Empat aturan sederhana yang membuat laporanmu lebih berguna.</p></div>
+            </header>
+            <ul class="card__body tips">
+              <li><i data-lucide="check"></i><strong>Satu laporan untuk satu bug.</strong> Kalau menemukan dua masalah berbeda, kirim dua laporan.</li>
+              <li><i data-lucide="check"></i><strong>Periksa duplikat.</strong> Gunakan pencarian di dashboard — judul serupa mungkin sudah dilaporkan.</li>
+              <li><i data-lucide="check"></i><strong>Judul spesifik.</strong> Jangan sekadar "bug" atau "rusak"; jelaskan yang rusak dan di mana.</li>
+              <li><i data-lucide="check"></i><strong>Jujur dan akurat.</strong> Informasi yang akurat membantu tim memperbaiki lebih cepat.</li>
+            </ul>
+          </section>
+
+          <section class="card" id="ringkasan">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="file-text"></i></span>
+              <div><h2>Ringkasan bug</h2><p>Judul singkat, kategori, dan tingkat keparahan.</p></div>
+            </header>
+            <div class="card__body stack">
+              <p><strong>Judul</strong> — singkat dan spesifik, 5–100 karakter. Masukkan nama fitur dan lokasinya:</p>
+              <div class="compare">
+                <div>
+                  <h4>Disarankan</h4>
+                  <p class="example example--good"><i data-lucide="check"></i>Hopper tidak memindahkan item di area klaim</p>
+                </div>
+                <div>
+                  <h4>Hindari</h4>
+                  <p class="example example--bad"><i data-lucide="x"></i>Hopper rusak, tolong diperbaiki!!</p>
+                </div>
+              </div>
+              <p><strong>Kategori</strong> — pilih yang paling sesuai:</p>
+              <ul class="tips">
+                <li><i data-lucide="check"></i><strong>Mekanik</strong> — item, mesin, redstone, behavior blok/mob.</li>
+                <li><i data-lucide="check"></i><strong>Ekonomi</strong> — uang, trades, market, shop.</li>
+                <li><i data-lucide="check"></i><strong>Proteksi</strong> — klaim, lock, area perlindungan.</li>
+                <li><i data-lucide="check"></i><strong>Dunia</strong> — terrain, struktur, spawn, worldgen.</li>
+                <li><i data-lucide="check"></i><strong>Misi</strong> — quest, event, misi harian.</li>
+                <li><i data-lucide="check"></i><strong>Antarmuka</strong> — UI, menu, command, lag/scoreboard.</li>
+              </ul>
+              <p><strong>Prioritas</strong> — seberapa parah dampaknya:</p>
+              <ul class="tips">
+                <li><span class="badge" data-v="Kritis">Kritis</span> Server down, data hilang, atau exploit yang merugikan banyak pemain.</li>
+                <li><span class="badge" data-v="Tinggi">Tinggi</span> Bug besar yang menghalangi pemain bermain.</li>
+                <li><span class="badge" data-v="Sedang">Sedang</span> Mengganggu, tapi masih ada jalan lain.</li>
+                <li><span class="badge" data-v="Rendah">Rendah</span> Masalah kecil atau kosmetik.</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="card" id="lingkungan">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="gamepad-2"></i></span>
+              <div><h2>Lingkungan permainan</h2><p>Info ini membantu developer mereproduksi masalah.</p></div>
+            </header>
+            <ul class="card__body tips">
+              <li><i data-lucide="check"></i><strong>Edisi Minecraft</strong> — Jawa atau Bedrock.</li>
+              <li><i data-lucide="check"></i><strong>Versi game</strong> — tulis persis seperti di layar, contoh <code>1.21.1</code>.</li>
+              <li><i data-lucide="check"></i><strong>Platform</strong> — Windows, Android, dll. tempat kamu bermain.</li>
+              <li><i data-lucide="check"></i><strong>Realm</strong> — pilih realm tempat bug terjadi (Earth, Tycoon, Survival RPG, dll).</li>
+              <li><i data-lucide="check"></i><strong>Kapan terjadi</strong> — tanggal/jam jika bug terjadi pada waktu tertentu.</li>
+              <li><i data-lucide="check"></i><strong>Koordinat</strong> — isi saat lokasi relevan: <code>x: 117 y: 66 z: -156</code>.</li>
+            </ul>
+          </section>
+
+          <section class="card" id="reproduksi">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="repeat-2"></i></span>
+              <div><h2>Detail dan langkah reproduksi</h2><p>Bagian terpenting: jelaskan cara memunculkan bug.</p></div>
+            </header>
+            <div class="card__body stack">
+              <p><strong>Deskripsi</strong> — ceritakan dengan bahasamu sendiri apa yang terjadi.</p>
+              <p><strong>Langkah reproduksi</strong> — tulis jalur paling pendek untuk memunculkan bug, satu langkah per baris:</p>
+              <ol class="steps">
+                <li>Masuk ke Survival Earth.</li>
+                <li>Buka area klaim pribadimu.</li>
+                <li>Tempatkan hopper di bawah chest.</li>
+                <li>Perhatikan item tidak berpindah ke chest.</li>
+              </ol>
+              <p><strong>Hasil yang diharapkan</strong> vs <strong>hasil aktual</strong> — bandingkan apa yang seharusnya terjadi dengan apa yang benar-benar terjadi.</p>
+              <p><strong>Frekuensi</strong> — seberapa sering bug muncul: selalu, sering, kadang-kadang, atau sekali saja.</p>
+            </div>
+          </section>
+
+          <section class="card" id="bukti">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="link-2"></i></span>
+              <div><h2>Tautan bukti</h2><p>Screenshot atau video mempercepat konfirmasi bug.</p></div>
+            </header>
+            <ul class="card__body tips">
+              <li><i data-lucide="check"></i>Unggah screenshot ke layanan seperti Imgur, lalu tempel URL-nya saja.</li>
+              <li><i data-lucide="check"></i>Untuk video, gunakan tautan YouTube yang bisa dibuka tim.</li>
+              <li><i data-lucide="check"></i>Pastikan tautan bisa diakses (tidak private/hidden).</li>
+              <li><i data-lucide="x"></i>Jangan mengunggah file langsung ke laporan.</li>
+            </ul>
+          </section>
+
+          <section class="card" id="status">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="activity"></i></span>
+              <div><h2>Status laporan</h2><p>Alur laporanmu setelah dikirim.</p></div>
+            </header>
+            <ol class="card__body timeline">
+              <li><strong>Baru</strong> — laporan diterima dan menunggu ditinjau tim.</li>
+              <li><strong>Dikonfirmasi</strong> — tim berhasil mereproduksi masalahnya.</li>
+              <li><strong>Dikerjakan</strong> — perbaikan sedang dalam proses.</li>
+              <li><strong>Selesai</strong> — perbaikan telah rilis.</li>
+            </ol>
+            <p class="card__body hint">Klik <strong>Ikuti laporan</strong> di halaman laporan agar mudah dipantau dari menu <em>Laporan diikuti</em> di sidebar.</p>
+          </section>
+
+          <section class="card" id="aturan">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="shield"></i></span>
+              <div><h2>Aturan pelaporan</h2><p>Perlakukan pelaporan seperti kerja tim pada umumnya.</p></div>
+            </header>
+            <ul class="card__body tips">
+              <li><i data-lucide="check"></i>Jangan spam atau kirim laporan yang sama berulang kali.</li>
+              <li><i data-lucide="check"></i>Kirim data yang benar — jangan mengarang (termasuk bug milik orang lain).</li>
+              <li><i data-lucide="check"></i>Hormati pemain lain; jangan sebut nama untuk menyerang.</li>
+              <li><i data-lucide="check"></i>Jangan membagikan informasi pribadi (kata sandi, alamat, dll.) di ruang publik.</li>
+            </ul>
+          </section>
+
+        </div>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Pada panduan ini</h2><i data-lucide="list"></i></div>
+            <ul class="card__body tips">
+              <li><a href="#summary">Sebelum melapor</a></li>
+              <li><a href="#ringkasan">Ringkasan bug</a></li>
+              <li><a href="#lingkungan">Lingkungan permainan</a></li>
+              <li><a href="#reproduksi">Langkah reproduksi</a></li>
+              <li><a href="#bukti">Tautan bukti</a></li>
+              <li><a href="#status">Status laporan</a></li>
+              <li><a href="#aturan">Aturan pelaporan</a></li>
+            </ul>
+            <a class="card__foot" href="lapor.html">Laporkan bug sekarang →</a>
+          </section>
+          <section class="card promo">
+            <div class="promo__img"></div>
+            <div class="promo__body">
+              <h3>Dunia yang kita bangun bersama.</h3>
+              <p>Laporanmu membantu Alwination jadi tempat bermain yang lebih baik.</p>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="footer" id="footer"></footer>
+    </main>
+  </div>
+</body>
+</html>
