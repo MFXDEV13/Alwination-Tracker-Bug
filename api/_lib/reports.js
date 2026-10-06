@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
 
+/* Enum berikut dipakai validasi server (sumber kebenaran).
+   PENTING: nilainya harus sinkron dengan konstanta di js/app.js (UI). */
 export const STATUSES = ['Baru', 'Dikonfirmasi', 'Dikerjakan', 'Selesai'];
 export const CATEGORIES = ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka'];
 export const PRIORITIES = ['Kritis', 'Tinggi', 'Sedang', 'Rendah'];
@@ -11,22 +13,29 @@ export const REALMS = [
 ];
 export const FREQUENCIES = ['Selalu', 'Sering', 'Kadang-kadang', 'Sekali saja'];
 
+/** Ubah string id menjadi ObjectId MongoDB; null bila tidak valid. */
 export function parseReportId(value) {
   return ObjectId.isValid(value) ? new ObjectId(value) : null;
 }
 
+/** Ubah dokumen MongoDB menjadi objek JSON dengan `id` (string) menggantikan `_id`. */
 export function serializeDocument(document) {
   if (!document) return null;
   const { _id, ...fields } = document;
   return { ...fields, id: String(_id) };
 }
 
+/** Set reportId yang diikuti pengguna (untuk flag `followed` pada daftar/detail). */
 export async function getFollowedReportIds(database, email) {
   if (!email) return new Set();
   const docs = await database.collection('follows').find({ email }).project({ reportId: 1 }).toArray();
   return new Set(docs.map(doc => doc.reportId));
 }
 
+/**
+ * Validasi data laporan.
+ * @returns {string} pesan error bila tidak valid, atau objek bersih (trim) bila valid.
+ */
 export function validateReport(data) {
   const text = (value, min, max) => typeof value === 'string' && value.trim().length >= min && value.length <= max;
   let evidenceLink = '';
@@ -71,6 +80,7 @@ export function validateReport(data) {
   };
 }
 
+/** Kirim respons 500 generik (tanpa membocorkan detail error) dan log error. */
 export function sendServerError(res, error) {
   console.error('API request failed.');
   if (!res.headersSent) res.status(500).json({ error: 'Server tidak dapat memproses permintaan.' });

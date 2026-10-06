@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx vercel dev"
+    "dev": "npx vercel dev",
+    "check": "node scripts/check.js"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0",

@@ -1,20 +1,15 @@
-import { requireAdmin } from '../_lib/auth.js';
+import { envEmailList, OWNER_EMAIL, requireAdmin } from '../_lib/auth.js';
 import { getDatabase } from '../_lib/mongo.js';
 import { sendServerError } from '../_lib/reports.js';
 
 const ROLES = ['admin', 'trusted'];
-const OWNER_EMAIL = 'azwarptk5@gmail.com';
 const USERNAME_RULE = /^[A-Za-z0-9_]{1,24}$/;
-
-function envEmails(variable, fallback = '') {
-  return (process.env[variable] || fallback).split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
-}
 
 /* Role efektif dari env/owner untuk sebuah email; null = tidak dikelola env. */
 function envRoleFor(email) {
   if (email === OWNER_EMAIL) return 'admin';
-  if (envEmails('ADMIN_EMAILS').includes(email)) return 'admin';
-  if (envEmails('TRUSTED_EMAILS', process.env.ADMIN_EMAILS).includes(email)) return 'trusted';
+  if (envEmailList('ADMIN_EMAILS').includes(email)) return 'admin';
+  if (envEmailList('TRUSTED_EMAILS', process.env.ADMIN_EMAILS).includes(email)) return 'trusted';
   return null;
 }
 
@@ -41,10 +36,10 @@ export default async function handler(req, res) {
       }
       // Prioritas: DB < env TRUSTED < env ADMIN < owner. Role yang akhir dikalahkan,
       // sedangkan username tetap dipertahankan dari DB bila sudah diisi.
-      for (const email of envEmails('TRUSTED_EMAILS', process.env.ADMIN_EMAILS)) {
+      for (const email of envEmailList('TRUSTED_EMAILS', process.env.ADMIN_EMAILS)) {
         merged.set(email, { email, role: 'trusted', username: manual.get(email)?.username || null, source: 'env', createdAt: null });
       }
-      for (const email of envEmails('ADMIN_EMAILS')) {
+      for (const email of envEmailList('ADMIN_EMAILS')) {
         merged.set(email, { email, role: 'admin', username: manual.get(email)?.username || null, source: 'env', createdAt: null });
       }
       merged.set(OWNER_EMAIL, {
@@ -102,7 +97,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Allow', 'GET, POST, DELETE');
-    res.status(405).json({ error: 'Method not allowed.' });
+    res.status(405).json({ error: 'Metode permintaan tidak didukung.' });
   } catch (error) {
     sendServerError(res, error);
   }

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     }
 
     res.setHeader('Allow', 'GET, POST');
-    res.status(405).json({ error: 'Method not allowed.' });
+    res.status(405).json({ error: 'Metode permintaan tidak didukung.' });
   } catch (error) {
     sendServerError(res, error);
   }

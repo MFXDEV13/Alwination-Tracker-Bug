@@ -7,6 +7,8 @@ import { auth } from './firebase-client.js';
    ========================================================= */
 
 /* ---------- 1) Data ---------- */
+/* Enum berikut JANGAN diubah hanya di file ini: harus sinkron dengan
+   api/_lib/reports.js (validasi server). Ubah di kedua tempat lalu `npm run check`. */
 const STATUSES   = ['Baru', 'Dikonfirmasi', 'Dikerjakan', 'Selesai'];
 const PRIORITIES = ['Kritis', 'Tinggi', 'Sedang', 'Rendah'];   // urut dari paling parah
 const CATEGORIES = ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka'];

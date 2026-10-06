@@ -8,8 +8,5 @@ export const firebaseConfig = {
   measurementId: 'G-3ZYJJ2M8K1',
 };
 
-export const ADMIN_EMAILS = ['azwarptk5@gmail.com'];
-export const TRUSTED_EMAILS = ['azwarptk5@gmail.com'];
-
 export const isFirebaseConfigured = Object.values(firebaseConfig)
   .every(value => value && !value.includes('YOUR_'));
