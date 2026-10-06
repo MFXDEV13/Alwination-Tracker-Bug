@@ -20,8 +20,18 @@ async function verifyAccess(user) {
     const token = await user.getIdToken();
     const response = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
     if (response.ok) return true;
+    let serverError = '';
+    try {
+      serverError = (await response.json()).error || '';
+    } catch {
+      /* Abaikan body bukan JSON. */
+    }
     await signOut(auth);
-    showMessage('Email ini belum diizinkan mengakses pusat laporan. Hubungi admin untuk menambahkan akses.');
+    if (response.status === 404) {
+      showMessage('API belum ter-deploy di Vercel. Deploy ulang lalu coba lagi.');
+    } else {
+      showMessage(serverError || 'Email ini belum diizinkan mengakses pusat laporan. Hubungi admin untuk menambahkan akses.');
+    }
     return false;
   } catch {
     return true;
