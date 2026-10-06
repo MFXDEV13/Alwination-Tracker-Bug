@@ -95,7 +95,7 @@ function renderShell() {
 
   $('#topbar').innerHTML = `
     <a class="brand" href="index.html">
-      <img class="brand__image" src="img/alwination-logo.svg" alt="Alwination — Pusat laporan bug">
+      <img class="brand__image" src="img/alwination-logo.png" alt="Alwination — Pusat laporan bug">
     </a>
     <nav class="topbar__nav">
       <a class="is-active" href="index.html">Pelacak bug</a>
