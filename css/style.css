@@ -97,6 +97,12 @@ svg.lucide { width: 16px; height: 16px; flex: none; }
 .side-card strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 13px; }
 .side-card a { display: inline-block; margin-top: 8px; color: var(--accent); }
 .status-dot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.status-dot.is-online { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .18); animation: status-pulse 2s ease-in-out infinite; }
+.status-dot.is-offline { background: var(--danger); box-shadow: 0 0 0 3px rgba(242, 97, 109, .18); }
+.status-dot.is-loading { background: var(--muted); box-shadow: 0 0 0 3px rgba(127, 127, 127, .15); }
+@keyframes status-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.server-motd { margin: 6px 0 0; color: var(--accent); font-family: var(--mono); font-size: 11px; line-height: 1.5; }
+.server-sub { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
 
 .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 .footer nav { display: flex; gap: 20px; }
@@ -310,6 +316,7 @@ a.table__row:hover { background: var(--accent-soft); box-shadow: inset 3px 0 0 v
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .anim-ready .main > *, .anim-ready .topbar, .anim-ready .sidebar, .anim-ready .table__row, .anim-ready .stat, .anim-ready .updates li { animation: none !important; opacity: 1 !important; }
+  .status-dot.is-online { animation: none !important; }
   .card, .btn { transition: none !important; }
 }
 

@@ -14,6 +14,10 @@ let REPORTS = [];
 let PROFILE = null;
 let NOTIFICATIONS = [];
 
+/* Server Minecraft yang dipantau (status via api.mcstatus.io) */
+const SERVER = { host: 'Alwination.id', port: 25565 };
+const SERVER_ENDPOINT = `https://api.mcstatus.io/v2/status/java/${encodeURIComponent(SERVER.host)}:${SERVER.port}`;
+
 /* ---------- 2) Helper ---------- */
 const $  = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -153,10 +157,12 @@ function renderShell() {
         ${navLink({ label: 'Laporan dikuti', ico: 'bookmark', href: '#' })}
       </div>
     </div>
-    <div class="side-card">
+    <div class="side-card" id="server-card">
       <p class="nav-label">Server Alwination</p>
-      <strong><span class="status-dot"></span>Berjalan normal</strong>
-      Java 1.21.1 · Survival · Realm 6
+      <strong><span class="status-dot is-loading" id="server-dot"></span><span id="server-title">Memeriksa status…</span></strong>
+      <p class="server-motd" id="server-motd"></p>
+      <p class="row__meta" id="server-meta">Alwination.id:25565</p>
+      <p class="server-sub" id="server-sub">Memuat data…</p>
     </div>
     <div class="side-card">
       <strong>Butuh bantuan?</strong>
@@ -751,11 +757,64 @@ function initAdmin() {
 }
 
 /* ---------- 8) Mulai ---------- */
+/* ---------- Status server Minecraft (widget sidebar) ---------- */
+const cleanMOTD = text => String(text ?? '')
+  .split('\n')
+  .map(line => line.replace(/§[0-9A-FK-ORa-fk-or]/g, ''))
+  .filter(Boolean)
+  .join(' ');
+
+function renderServerStatus(data) {
+  const dot = $('#server-dot');
+  const title = $('#server-title');
+  const motd = $('#server-motd');
+  const meta = $('#server-meta');
+  const sub = $('#server-sub');
+  if (!dot || !title) return;
+
+  const offline = !data || data.online !== true;
+  dot.className = `status-dot ${offline ? 'is-offline' : 'is-online'}`;
+  title.textContent = offline ? 'Server offline' : 'Online';
+
+  if (motd) motd.textContent = offline ? 'Tidak dapat dijangkau saat ini.' : cleanMOTD(data.motd?.clean || '');
+  if (meta) meta.textContent = `${SERVER.host}:${SERVER.port}${offline ? '' : ` · ${data.version?.name_clean || ''}`}`;
+  if (sub) {
+    sub.textContent = offline
+      ? 'Coba lagi nanti.'
+      : `${data.players?.online ?? 0} / ${data.players?.max ?? '?'} pemain online`;
+  }
+}
+
+async function loadServerStatus() {
+  const dot = $('#server-dot');
+  const title = $('#server-title');
+  if (!dot) return;
+  dot.className = 'status-dot is-loading';
+  if (title) title.textContent = 'Memeriksa status…';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(SERVER_ENDPOINT, { signal: controller.signal });
+    clearTimeout(timeout);
+    renderServerStatus(await response.json());
+  } catch {
+    renderServerStatus({ online: false });
+  }
+}
+
+function initServerStatus() {
+  if (!$('#server-card')) return;
+  loadServerStatus();
+  setInterval(loadServerStatus, 60000);
+  window.addEventListener('focus', loadServerStatus);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderShell();
   staggerEntrance();
   initNotifications();
   loadProfile();
+  initServerStatus();
   if ($('#report-list'))  initDashboard();
   if ($('#comment-form')) initDetail();
   if ($('#report-form'))  initReportForm();
