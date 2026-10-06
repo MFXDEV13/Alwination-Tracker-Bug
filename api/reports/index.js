@@ -35,8 +35,19 @@ export default async function handler(req, res) {
         comments: 0,
         createdAt: now,
         updatedAt: now,
+        history: [{ status: 'Baru', author: user.name || user.email, authorEmail: user.email, at: now }],
       };
       await reports.insertOne(report);
+      await (await getDatabase()).collection('notifications').insertOne({
+        _id: new ObjectId(),
+        type: 'new_report',
+        reportId: String(id),
+        ticketId: report.ticketId,
+        title: validated.title,
+        author: report.author,
+        read: false,
+        createdAt: now,
+      });
       res.status(201).json({ report: serializeDocument(report) });
       return;
     }

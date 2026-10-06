@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel admin — Alwination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/auth.js"></script>
+</head>
+<body class="auth-pending" data-nav="admin" data-page="admin">
+  <header class="topbar" id="topbar"></header>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <p class="eyebrow">Alwination / Admin</p>
+          <h1>Panel admin</h1>
+          <p>Kelola akses email dan perbarui status laporan.</p>
+        </div>
+      </div>
+
+      <div class="stack">
+        <section class="card">
+          <div class="card__head">
+            <h2 class="card__title">Kelola akses email</h2>
+            <i data-lucide="shield"></i>
+          </div>
+          <div class="card__body">
+            <form class="access-form" id="access-form">
+              <input class="input" name="email" type="email" required autocomplete="off" placeholder="email@contoh.com">
+              <select class="select" name="role" aria-label="Role akses">
+                <option value="trusted">Trusted</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button class="btn btn--primary" type="submit"><i data-lucide="plus"></i>Tambah</button>
+            </form>
+            <p class="hint">Akses dari env TRUSTED_EMAILS / ADMIN_EMAILS (mis. akun pemilik) selalu aktif dan tidak tampil di sini.</p>
+            <ul class="access-list" id="access-list"></ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card__head">
+            <h2 class="card__title">Ubah status laporan</h2>
+            <i data-lucide="list"></i>
+          </div>
+          <div class="card__body">
+            <div class="admin-reports" id="admin-reports"><p class="empty">Memuat laporan…</p></div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer" id="footer"></footer>
+    </main>
+  </div>
+</body>
+</html>

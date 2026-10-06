@@ -5,7 +5,7 @@ import {
   signOut,
 } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import { auth } from './firebase-client.js';
-import { isFirebaseConfigured, TRUSTED_EMAILS } from './firebase-config.js';
+import { isFirebaseConfigured } from './firebase-config.js';
 
 const isLoginPage = document.body.dataset.authPage === 'login';
 const signInButton = document.querySelector('#google-sign-in');
@@ -14,13 +14,18 @@ const showMessage = text => {
   if (message) message.textContent = text;
 };
 
-function isTrusted(user) {
-  return Boolean(user.emailVerified && TRUSTED_EMAILS.includes(user.email?.toLowerCase()));
-}
-
-function accessMessage(user) {
-  if (!user.emailVerified) return `Email ${user.email || 'akun Google ini'} belum terverifikasi.`;
-  return `Akun ${user.email || 'Google ini'} belum diizinkan. Gunakan ${TRUSTED_EMAILS.join(', ')} atau minta admin menambahkannya.`;
+/* Verifikasi akses lewat server (sumber kebenaran: env + koleksi access MongoDB) */
+async function verifyAccess(user) {
+  try {
+    const token = await user.getIdToken();
+    const response = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+    if (response.ok) return true;
+    await signOut(auth);
+    showMessage('Email ini belum diizinkan mengakses pusat laporan. Hubungi admin untuk menambahkan akses.');
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 function renderProfile(user) {
@@ -39,7 +44,7 @@ function renderProfile(user) {
 function returnTarget() {
   const requested = new URLSearchParams(location.search).get('next') || 'index.html';
   const page = requested.split(/[?#]/, 1)[0];
-  return ['index.html', 'lapor.html', 'laporan.html'].includes(page) ? requested : 'index.html';
+  return ['index.html', 'lapor.html', 'laporan.html', 'admin.html'].includes(page) ? requested : 'index.html';
 }
 
 function redirectToLogin() {
@@ -64,11 +69,7 @@ if (!isFirebaseConfigured) {
       showMessage('Menghubungkan ke Google…');
       try {
         const { user } = await signInWithPopup(auth, provider);
-        if (!isTrusted(user)) {
-          await signOut(auth);
-          showMessage(accessMessage(user));
-          return;
-        }
+        if (!(await verifyAccess(user))) return;
         location.replace(returnTarget());
       } catch (error) {
         const messages = {
@@ -124,11 +125,7 @@ if (!isFirebaseConfigured) {
   onAuthStateChanged(auth, async user => {
     if (isLoginPage) {
       if (!user) return;
-      if (!isTrusted(user)) {
-        await signOut(auth);
-        showMessage(accessMessage(user));
-        return;
-      }
+      if (!(await verifyAccess(user))) return;
       location.replace(returnTarget());
       return;
     }
@@ -137,8 +134,7 @@ if (!isFirebaseConfigured) {
       redirectToLogin();
       return;
     }
-    if (!isTrusted(user)) {
-      await signOut(auth);
+    if (!(await verifyAccess(user))) {
       location.replace('login.html?error=unauthorized');
       return;
     }

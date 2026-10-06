@@ -1,0 +1,58 @@
+import { requireAdmin } from '../_lib/auth.js';
+import { getDatabase } from '../_lib/mongo.js';
+import { sendServerError } from '../_lib/reports.js';
+
+const ROLES = ['admin', 'trusted'];
+
+export default async function handler(req, res) {
+  const user = await requireAdmin(req, res);
+  if (!user) return;
+
+  try {
+    const access = (await getDatabase()).collection('access');
+
+    if (req.method === 'GET') {
+      const documents = await access.find({}).sort({ role: 1, email: 1 }).toArray();
+      res.status(200).json({
+        access: documents.map(document => ({
+          email: document.email,
+          role: document.role,
+          createdAt: document.createdAt,
+        })),
+      });
+      return;
+    }
+
+    if (req.method === 'POST') {
+      const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+      const role = typeof req.body?.role === 'string' ? req.body.role : '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        res.status(400).json({ error: 'Email tidak valid.' });
+        return;
+      }
+      if (!ROLES.includes(role)) {
+        res.status(400).json({ error: 'Role tidak valid.' });
+        return;
+      }
+      await access.updateOne({ email }, { $set: { email, role, createdAt: new Date() } }, { upsert: true });
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    if (req.method === 'DELETE') {
+      const email = typeof req.query.email === 'string' ? req.query.email.trim().toLowerCase() : '';
+      if (!email) {
+        res.status(400).json({ error: 'Email tidak ditemukan.' });
+        return;
+      }
+      await access.deleteOne({ email });
+      res.status(200).json({ ok: true });
+      return;
+    }
+
+    res.setHeader('Allow', 'GET, POST, DELETE');
+    res.status(405).json({ error: 'Method not allowed.' });
+  } catch (error) {
+    sendServerError(res, error);
+  }
+}

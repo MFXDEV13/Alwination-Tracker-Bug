@@ -1,9 +1,9 @@
 import { requireAdmin, requireTrustedUser } from '../_lib/auth.js';
 import { getDatabase, getMongoClient } from '../_lib/mongo.js';
-import { parseReportId, serializeDocument, sendServerError } from '../_lib/reports.js';
+import { parseReportId, sendServerError, serializeDocument, STATUSES } from '../_lib/reports.js';
 
 export default async function handler(req, res) {
-  const user = req.method === 'DELETE'
+  const user = ['DELETE', 'PATCH'].includes(req.method)
     ? await requireAdmin(req, res)
     : await requireTrustedUser(req, res);
   if (!user) return;
@@ -25,6 +25,29 @@ export default async function handler(req, res) {
         return;
       }
       res.status(200).json({ report: serializeDocument(report) });
+      return;
+    }
+
+    if (req.method === 'PATCH') {
+      const status = typeof req.body?.status === 'string' ? req.body.status : '';
+      if (!STATUSES.includes(status)) {
+        res.status(400).json({ error: 'Status tidak valid.' });
+        return;
+      }
+      const now = new Date();
+      const result = await reports.updateOne(
+        { _id: id },
+        {
+          $set: { status, updatedAt: now },
+          $push: { history: { status, author: user.name || user.email, authorEmail: user.email, at: now } },
+        },
+      );
+      if (result.matchedCount !== 1) {
+        res.status(404).json({ error: 'Laporan tidak ditemukan.' });
+        return;
+      }
+      const updated = await reports.findOne({ _id: id });
+      res.status(200).json({ report: serializeDocument(updated) });
       return;
     }
 
@@ -51,7 +74,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.setHeader('Allow', 'GET, DELETE');
+    res.setHeader('Allow', 'GET, PATCH, DELETE');
     res.status(405).json({ error: 'Method not allowed.' });
   } catch (error) {
     sendServerError(res, error);

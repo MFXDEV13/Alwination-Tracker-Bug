@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 
+export const STATUSES = ['Baru', 'Dikonfirmasi', 'Dikerjakan', 'Selesai'];
 export const CATEGORIES = ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka'];
 export const PRIORITIES = ['Kritis', 'Tinggi', 'Sedang', 'Rendah'];
 export const EDITIONS = ['Java Edition', 'Bedrock Edition'];

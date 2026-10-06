@@ -1,5 +1,6 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getDatabase } from './mongo.js';
 
 function getAdminAuth() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) throw new Error('FIREBASE_SERVICE_ACCOUNT is not configured.');
@@ -13,6 +14,26 @@ function getAdminAuth() {
 
 function emailList(variable, fallback = '') {
   return (process.env[variable] || fallback).split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
+}
+
+async function getAccessEntry(email) {
+  try {
+    const database = await getDatabase();
+    return await database.collection('access').findOne({ email });
+  } catch {
+    return null;
+  }
+}
+
+export async function getAccessLevel(email) {
+  email = (email || '').toLowerCase();
+  if (!email) return null;
+  if (emailList('ADMIN_EMAILS').includes(email)) return 'admin';
+  if (emailList('TRUSTED_EMAILS', process.env.ADMIN_EMAILS).includes(email)) return 'trusted';
+  const entry = await getAccessEntry(email);
+  if (entry && entry.role === 'admin') return 'admin';
+  if (entry && entry.role === 'trusted') return 'trusted';
+  return null;
 }
 
 export async function requireTrustedUser(req, res) {
@@ -31,7 +52,7 @@ export async function requireTrustedUser(req, res) {
     return null;
   }
 
-  if (!user.email_verified || !emailList('TRUSTED_EMAILS', process.env.ADMIN_EMAILS).includes(user.email?.toLowerCase())) {
+  if (!user.email_verified || !(await getAccessLevel(user.email))) {
     res.status(403).json({ error: 'This account is not allowed to access reports.' });
     return null;
   }
@@ -41,7 +62,7 @@ export async function requireTrustedUser(req, res) {
 export async function requireAdmin(req, res) {
   const user = await requireTrustedUser(req, res);
   if (!user) return null;
-  if (!emailList('ADMIN_EMAILS').includes(user.email?.toLowerCase())) {
+  if ((await getAccessLevel(user.email)) !== 'admin') {
     res.status(403).json({ error: 'Administrator access required.' });
     return null;
   }

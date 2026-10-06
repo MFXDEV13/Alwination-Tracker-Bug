@@ -1,6 +1,5 @@
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import { auth } from './firebase-client.js';
-import { ADMIN_EMAILS } from './firebase-config.js';
 
 /* =========================================================
   Alwination — Pusat Laporan Bug
@@ -12,6 +11,8 @@ const STATUSES   = ['Baru', 'Dikonfirmasi', 'Dikerjakan', 'Selesai'];
 const PRIORITIES = ['Kritis', 'Tinggi', 'Sedang', 'Rendah'];   // urut dari paling parah
 const CATEGORIES = ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka'];
 let REPORTS = [];
+let PROFILE = null;
+let NOTIFICATIONS = [];
 
 /* ---------- 2) Helper ---------- */
 const $  = (selector, root = document) => root.querySelector(selector);
@@ -103,7 +104,10 @@ function renderShell() {
       <a href="#">Komunitas</a>
     </nav>
     <div class="topbar__right">
-      <button class="icon-btn" aria-label="Notifikasi">${icon('bell')}<span class="ping"></span></button>
+      <div class="notif">
+        <button class="icon-btn" id="notif-bell" type="button" aria-label="Notifikasi" aria-expanded="false" aria-controls="notif-panel">${icon('bell')}<span class="notif-badge" id="notif-badge" hidden></span></button>
+        <div class="notif-panel" id="notif-panel" hidden></div>
+      </div>
       <div class="profile">
         <button class="user" id="profile-menu-toggle" type="button" aria-label="Buka menu akun" aria-expanded="false" aria-controls="profile-menu">
           <span class="avatar" id="profile-avatar">?</span><span>Profil</span>${icon('chevron-down')}
@@ -122,6 +126,7 @@ function renderShell() {
         ${navLink({ key: 'dashboard', label: 'Dashboard',     ico: 'layout-dashboard', href: 'index.html' })}
         ${navLink({ key: 'reports',   label: 'Semua laporan', ico: 'list',             href: 'index.html#laporan' })}
         ${navLink({ key: 'new',       label: 'Laporkan bug',  ico: 'bug',              href: 'lapor.html' })}
+        <a class="nav-item${active === 'admin' ? ' is-active' : ''}" id="admin-nav" href="admin.html" hidden>${icon('shield')}<span>Panel admin</span></a>
       </div>
     </div>
     <div>
@@ -304,9 +309,7 @@ function initDetail() {
   const submitButton = $('button[type="submit"]', form);
   const deleteButton = $('#delete-report');
 
-  onAuthStateChanged(auth, user => {
-    deleteButton.hidden = !user?.emailVerified || !ADMIN_EMAILS.includes(user.email?.toLowerCase());
-  });
+  onAuthStateChanged(auth, () => updateAdminUI());
 
   if (!reportId) {
     $('#report-title').textContent = 'Laporan tidak ditemukan.';
@@ -316,8 +319,7 @@ function initDetail() {
   }
 
   deleteButton.addEventListener('click', async () => {
-    const userEmail = auth.currentUser?.email?.toLowerCase();
-    if (!auth.currentUser?.emailVerified || !ADMIN_EMAILS.includes(userEmail)) return;
+    if (!isAdmin()) return;
     if (!confirm('Hapus laporan ini beserta semua komentarnya? Tindakan ini tidak dapat dibatalkan.')) return;
 
     deleteButton.disabled = true;
@@ -388,7 +390,12 @@ function initDetail() {
     $('#info-realm').textContent = report.realm || '—';
     $('#info-coords').textContent = report.coords || '—';
     $('#info-frequency').textContent = report.frequency || '—';
-    $('#report-history').innerHTML = `<li><strong>${esc(statusText)}</strong><small>${esc(author)} · ${esc(createdDate)}</small></li>`;
+    const history = Array.isArray(report.history) && report.history.length
+      ? report.history
+      : [{ status: statusText, author, at: report.createdAt }];
+    $('#report-history').innerHTML = history.map(entry =>
+      `<li><strong>${esc(entry.status)}</strong><small>${esc(entry.author || 'Pengguna')} · ${esc(formatDate(entry.at))}</small></li>`
+    ).join('');
     } catch (error) {
       $('#report-title').textContent = reportErrorMessage(error);
       form.hidden = true;
@@ -489,11 +496,214 @@ function initReportForm() {
   });
 }
 
-/* ---------- 7) Mulai ---------- */
+/* ---------- 7) Animasi, profil, notifikasi, admin ---------- */
+
+/* Animasi entri: naikkan halaman dengan stagger halus */
+function staggerEntrance() {
+  document.querySelectorAll('.main').forEach(main => {
+    [...main.children].forEach((element, index) => element.style.setProperty('--i', index));
+  });
+  document.body.classList.add('anim-ready');
+}
+
+/* Posisi pengguna dari server (sumber kebenaran akses) */
+async function loadProfile() {
+  try {
+    const { profile } = await apiRequest('/api/me');
+    PROFILE = profile;
+  } catch {
+    PROFILE = null;
+  }
+  updateAdminUI();
+}
+
+function isAdmin() {
+  return Boolean(PROFILE?.isAdmin && auth.currentUser?.emailVerified);
+}
+
+function updateAdminUI() {
+  const adminNav = $('#admin-nav');
+  if (adminNav) adminNav.hidden = !isAdmin();
+  const deleteButton = $('#delete-report');
+  if (deleteButton) deleteButton.hidden = !isAdmin();
+  if (document.body.dataset.page === 'admin' && !isAdmin()) location.replace('index.html');
+}
+
+/* ---------- Notifikasi bell ---------- */
+function renderNotifications() {
+  const panel = $('#notif-panel');
+  if (!panel) return;
+  panel.innerHTML = NOTIFICATIONS.length
+    ? NOTIFICATIONS.map(notification => `
+      <a class="notif-item${notification.read ? '' : ' is-unread'}" href="laporan.html?id=${encodeURIComponent(notification.reportId)}">
+        <strong>${esc(notification.ticketId || notification.type)}</strong>
+        <span class="notif-title">${esc(notification.title || 'Laporan baru')}</span>
+        <small>${esc(notification.author || 'Pengguna')} · ${esc(relativeTime(notification.createdAt))}</small>
+      </a>`).join('')
+    : '<p class="notif-empty">Belum ada notifikasi.</p>';
+}
+
+async function refreshNotifications() {
+  try {
+    const { notifications, unread } = await apiRequest('/api/notifications');
+    NOTIFICATIONS = notifications;
+    const badge = $('#notif-badge');
+    badge.hidden = unread === 0;
+    badge.textContent = unread > 99 ? '99+' : String(unread);
+    renderNotifications();
+  } catch {
+    /* Notifikasi tidak menghalangi halaman saat API bermasalah. */
+  }
+}
+
+function initNotifications() {
+  const bell = $('#notif-bell');
+  const panel = $('#notif-panel');
+  if (!bell || !panel) return;
+
+  bell.addEventListener('click', async () => {
+    const willOpen = panel.hidden;
+    panel.hidden = !willOpen;
+    bell.setAttribute('aria-expanded', String(willOpen));
+    if (!willOpen) return;
+    try {
+      await apiRequest('/api/notifications', { method: 'POST' });
+    } catch {
+      /* Tidak ditandai dibaca bila API gagal. */
+    }
+    await refreshNotifications();
+  });
+
+  document.addEventListener('click', event => {
+    if (panel.hidden) return;
+    if (!panel.contains(event.target) && !bell.contains(event.target)) {
+      panel.hidden = true;
+      bell.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  refreshNotifications();
+}
+
+/* ---------- Halaman admin ---------- */
+async function loadAccess() {
+  try {
+    const { access } = await apiRequest('/api/access');
+    $('#access-list').innerHTML = access.map(item => `
+      <li class="access-row" data-email="${esc(item.email)}">
+        <span class="access-email">${esc(item.email)}</span>
+        <span class="badge" data-v="${esc(item.role)}">${esc(item.role)}</span>
+        <button class="icon-btn" type="button" data-del="${esc(item.email)}" aria-label="Hapus akses">${icon('trash-2')}</button>
+      </li>`).join('')
+      || '<li class="muted">Belum ada akses tambahan. Akses dasar diambil dari env TRUSTED_EMAILS / ADMIN_EMAILS.</li>';
+  } catch (error) {
+    $('#access-list').innerHTML = `<li class="muted">${esc(reportErrorMessage(error))}</li>`;
+  }
+  icons();
+}
+
+function initAdminAccess() {
+  const form = $('#access-form');
+  if (!form) return;
+  loadAccess();
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('button[type="submit"]', form);
+    button.disabled = true;
+    try {
+      await apiRequest('/api/access', {
+        method: 'POST',
+        body: JSON.stringify({ email: form.elements.email.value, role: form.elements.role.value }),
+      });
+      form.reset();
+      await loadAccess();
+      toast('Akses email ditambahkan.');
+    } catch (error) {
+      toast(reportErrorMessage(error));
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  $('#access-list').addEventListener('click', async event => {
+    const button = event.target.closest('[data-del]');
+    if (!button) return;
+    if (!confirm(`Hapus akses ${button.dataset.del}?`)) return;
+    try {
+      await apiRequest(`/api/access?email=${encodeURIComponent(button.dataset.del)}`, { method: 'DELETE' });
+      await loadAccess();
+      toast('Akses dihapus.');
+    } catch (error) {
+      toast(reportErrorMessage(error));
+    }
+  });
+}
+
+async function initAdminReports() {
+  const list = $('#admin-reports');
+  if (!list) return;
+  try {
+    const { reports } = await apiRequest('/api/reports');
+    REPORTS = reports;
+    list.innerHTML = reports.map(report => `
+      <div class="admin-row" data-id="${esc(report.id)}">
+        <a class="admin-row__main" href="laporan.html?id=${encodeURIComponent(report.id)}">
+          <span>${esc(report.ticketId)}</span>
+          <strong>${esc(report.title)}</strong>
+        </a>
+        <span class="badge" data-v="${esc(report.status)}">${esc(report.status)}</span>
+        <select class="select status-select" aria-label="Ubah status laporan">
+          ${STATUSES.map(status => `<option${status === report.status ? ' selected' : ''}>${status}</option>`).join('')}
+        </select>
+      </div>`).join('')
+      || '<p class="empty">Belum ada laporan.</p>';
+    icons();
+  } catch (error) {
+    list.innerHTML = `<p class="empty">${esc(reportErrorMessage(error))}</p>`;
+  }
+}
+
+function initAdmin() {
+  initAdminReports();
+
+  const list = $('#admin-reports');
+  if (list) {
+    list.addEventListener('change', async event => {
+      const select = event.target.closest('.status-select');
+      if (!select) return;
+      const row = select.closest('.admin-row');
+      select.disabled = true;
+      try {
+        const { report } = await apiRequest(`/api/reports/${encodeURIComponent(row.dataset.id)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: select.value }),
+        });
+        const badge = $('.badge', row);
+        badge.dataset.v = report.status;
+        badge.textContent = report.status;
+        toast(`Status ${report.ticketId} diperbarui.`);
+      } catch (error) {
+        toast(reportErrorMessage(error));
+        select.value = REPORTS.find(report => report.id === row.dataset.id)?.status || select.value;
+      } finally {
+        select.disabled = false;
+      }
+    });
+  }
+
+  initAdminAccess();
+}
+
+/* ---------- 8) Mulai ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   renderShell();
+  staggerEntrance();
+  initNotifications();
+  loadProfile();
   if ($('#report-list'))  initDashboard();
   if ($('#comment-form')) initDetail();
   if ($('#report-form'))  initReportForm();
+  if ($('#admin-reports') || $('#access-form')) initAdmin();
   icons();
 });
