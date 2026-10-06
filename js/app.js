@@ -47,8 +47,24 @@ function timestampMillis(timestamp) {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
+/* Tunggu sesi Firebase pulih sebelum memanggil API (hindari 401 palsu saat DOMContentLoaded) */
+let authReadyPromise;
+function authReady() {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  if (!authReadyPromise) {
+    authReadyPromise = new Promise(resolve => {
+      const timeout = setTimeout(() => resolve(auth.currentUser), 8000);
+      onAuthStateChanged(auth, user => {
+        clearTimeout(timeout);
+        resolve(user);
+      });
+    });
+  }
+  return authReadyPromise;
+}
+
 async function apiRequest(path, options = {}, attempts = 0) {
-  const user = auth.currentUser;
+  const user = await authReady();
   if (!user) throw Object.assign(new Error('Silakan masuk kembali.'), { status: 401 });
   const token = await user.getIdToken(attempts > 0);
   const response = await fetch(path, {
@@ -263,6 +279,11 @@ function initDashboard() {
       state.page = 1;
       render();
     } catch (error) {
+      if (!loadReports.retried) {
+        loadReports.retried = true;
+        setTimeout(loadReports, 1500);
+        return;
+      }
       reportsReady = true;
       list.innerHTML = `<p class="empty">${esc(reportErrorMessage(error))}</p>`;
       $('#count').textContent = 'Gagal memuat laporan';
