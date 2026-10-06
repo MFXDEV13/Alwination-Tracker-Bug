@@ -102,6 +102,7 @@ svg.lucide { width: 16px; height: 16px; flex: none; }
 .status-dot.is-loading { background: var(--muted); box-shadow: 0 0 0 3px rgba(127, 127, 127, .15); }
 @keyframes status-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 .server-motd { margin: 6px 0 0; color: var(--accent); font-family: var(--mono); font-size: 11px; line-height: 1.5; }
+.status-count { color: var(--text); font-family: var(--mono); font-weight: 700; }
 .server-sub { margin: 2px 0 0; color: var(--muted); font-size: 11px; }
 
 .footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }

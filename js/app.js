@@ -764,6 +764,9 @@ const cleanMOTD = text => String(text ?? '')
   .filter(Boolean)
   .join(' ');
 
+/* Versi proxy (Velocity dkk) tidak menarik untuk ditampilkan sebagai "versi Minecraft". */
+const versionLabel = name => (/\bvelocity\b|velocity/i.test(String(name || '')) ? '' : String(name || '').trim());
+
 function renderServerStatus(data) {
   const dot = $('#server-dot');
   const title = $('#server-title');
@@ -774,14 +777,16 @@ function renderServerStatus(data) {
 
   const offline = !data || data.online !== true;
   dot.className = `status-dot ${offline ? 'is-offline' : 'is-online'}`;
-  title.textContent = offline ? 'Server offline' : 'Online';
+  const players = data?.players;
+  const playerCount = !offline && players ? `${players.online ?? 0}/${players.max ?? '?'}` : '';
+  title.innerHTML = offline ? 'Server offline' : `Online${playerCount ? ` <b class="status-count">${playerCount}</b>` : ''}`;
 
   if (motd) motd.textContent = offline ? 'Tidak dapat dijangkau saat ini.' : cleanMOTD(data.motd?.clean || '');
-  if (meta) meta.textContent = `${SERVER.host}:${SERVER.port}${offline ? '' : ` · ${data.version?.name_clean || ''}`}`;
+  if (meta) meta.textContent = `${SERVER.host}:${SERVER.port}`;
   if (sub) {
-    sub.textContent = offline
-      ? 'Coba lagi nanti.'
-      : `${data.players?.online ?? 0} / ${data.players?.max ?? '?'} pemain online`;
+    const version = !offline ? versionLabel(data?.version?.name_clean) : '';
+    sub.textContent = offline ? 'Coba lagi nanti.' : version;
+    sub.hidden = !offline && !version;
   }
 }
 
