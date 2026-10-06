@@ -544,7 +544,12 @@ async function loadProfile() {
   try {
     const { profile } = await apiRequest('/api/me');
     PROFILE = profile;
-  } catch {
+  } catch (error) {
+    if (!loadProfile.retried) {
+      loadProfile.retried = true;
+      setTimeout(loadProfile, 1500);
+      return;
+    }
     PROFILE = null;
   }
   updateAdminUI();
@@ -559,7 +564,24 @@ function updateAdminUI() {
   if (adminNav) adminNav.hidden = !isAdmin();
   const deleteButton = $('#delete-report');
   if (deleteButton) deleteButton.hidden = !isAdmin();
-  if (document.body.dataset.page === 'admin' && !isAdmin()) location.replace('index.html');
+  if (document.body.dataset.page !== 'admin') return;
+
+  // PROFILE null = status belum diketahui (fetch gagal/transien) → jangan tindih apa pun,
+  // redirect hanya dilakukan saat server PASTI membalas bukan-admin.
+  const guard = $('#admin-guard');
+  if (guard) guard.hidden = !PROFILE || isAdmin();
+  if (guard && PROFILE && !isAdmin()) {
+    const emailEl = guard.querySelector('[data-email]');
+    if (emailEl) emailEl.textContent = PROFILE.email || '';
+    const levelEl = guard.querySelector('[data-level]');
+    if (levelEl) levelEl.textContent = PROFILE.accessLevel || 'tidak diketahui';
+  }
+  if (PROFILE && !isAdmin()) {
+    clearTimeout(updateAdminUI.redirectTimer);
+    updateAdminUI.redirectTimer = setTimeout(() => {
+      if (PROFILE && !isAdmin()) location.replace('index.html');
+    }, 5000);
+  }
 }
 
 /* ---------- Notifikasi bell ---------- */

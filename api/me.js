@@ -17,6 +17,7 @@ export default async function handler(req, res) {
       name: user.name || user.email,
       isTrusted: true,
       isAdmin: level === 'admin',
+      accessLevel: level,
     },
   });
 }
