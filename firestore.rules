@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTrusted() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'azwarptk5@gmail.com';
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'azwarptk5@gmail.com';
+    }
+
+    function validReport() {
+      let data = request.resource.data;
+      return data.keys().hasAll([
+          'ticketId', 'title', 'category', 'priority', 'edition', 'version',
+          'platform', 'realm', 'when', 'coords', 'description', 'steps',
+          'expected', 'actual', 'frequency', 'evidenceLink', 'author',
+          'authorEmail', 'status', 'comments', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ticketId', 'title', 'category', 'priority', 'edition', 'version',
+          'platform', 'realm', 'when', 'coords', 'description', 'steps',
+          'expected', 'actual', 'frequency', 'evidenceLink', 'author',
+          'authorEmail', 'status', 'comments', 'createdAt', 'updatedAt'
+        ])
+        && data.ticketId is string && data.ticketId.size() <= 32
+        && data.title is string && data.title.size() >= 5 && data.title.size() <= 100
+        && data.category in ['Mekanik', 'Ekonomi', 'Proteksi', 'Dunia', 'Misi', 'Antarmuka']
+        && data.priority in ['Kritis', 'Tinggi', 'Sedang', 'Rendah']
+        && data.edition in ['Java Edition', 'Bedrock Edition']
+        && data.version is string && data.version.size() <= 32
+        && data.platform in ['Windows', 'macOS', 'Linux', 'Android', 'iOS']
+        && data.realm in ['Realm 1', 'Realm 2', 'Realm 3', 'Realm 4', 'Realm 5', 'Realm 6']
+        && data.when is string && data.when.size() <= 40
+        && data.coords is string && data.coords.size() <= 120
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 5000
+        && data.steps is string && data.steps.size() >= 1 && data.steps.size() <= 5000
+        && data.expected is string && data.expected.size() >= 1 && data.expected.size() <= 3000
+        && data.actual is string && data.actual.size() >= 1 && data.actual.size() <= 3000
+        && data.frequency in ['Selalu', 'Sering', 'Kadang-kadang', 'Sekali saja']
+        && data.evidenceLink is string && data.evidenceLink.size() <= 2048
+        && data.author is string && data.author.size() <= 120
+        && data.authorEmail == request.auth.token.email
+        && data.status == 'Baru'
+        && data.comments == 0
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    match /reports/{reportId} {
+      allow read: if isTrusted();
+      allow create: if isTrusted() && validReport();
+      allow update: if isTrusted()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comments', 'updatedAt'])
+        && request.resource.data.comments == resource.data.comments + 1
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if isTrusted();
+        allow create: if isTrusted()
+          && request.resource.data.keys().hasOnly(['body', 'author', 'authorEmail', 'createdAt'])
+          && request.resource.data.body is string
+          && request.resource.data.body.size() >= 1
+          && request.resource.data.body.size() <= 3000
+          && request.resource.data.author is string
+          && request.resource.data.author.size() <= 120
+          && request.resource.data.authorEmail == request.auth.token.email
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

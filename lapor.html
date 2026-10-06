@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laporkan bug — Alwination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/auth.js"></script>
+</head>
+<body class="auth-pending" data-nav="new">
+  <header class="topbar" id="topbar"></header>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <a class="back" href="index.html"><i data-lucide="chevron-left"></i>Semua laporan <span>/</span> <strong>Laporkan bug</strong></a>
+
+      <div class="page-head">
+        <div>
+          <h1>Bantu kami menemukan masalahnya.</h1>
+          <p>Laporan yang jelas membuat perbaikan lebih cepat. Isi sedetail yang kamu bisa.</p>
+        </div>
+      </div>
+
+      <div class="notice">
+        <i data-lucide="search"></i>
+        <p><strong>Cek dulu sebelum melapor.</strong> Bug yang sama mungkin sudah ada di daftar laporan.</p>
+        <a href="index.html#laporan">Cari laporan →</a>
+      </div>
+
+      <div class="form-layout">
+        <form class="stack" id="report-form">
+
+          <section class="card">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="bug"></i></span>
+              <div><h2>Ringkasan bug</h2><p>Judul singkat dan kategori bug.</p></div>
+            </header>
+            <div class="fields">
+              <div class="field field--full">
+                <label for="title">Judul laporan <b>*</b></label>
+                <input class="input" id="title" name="title" required minlength="5" maxlength="100" placeholder="Contoh: Hopper tidak memindahkan item di area klaim">
+                <span class="hint">Singkat dan spesifik, 5–100 karakter.</span>
+              </div>
+              <div class="field">
+                <label for="category">Kategori <b>*</b></label>
+                <select class="select" id="category" name="category" required></select>
+              </div>
+              <div class="field">
+                <label for="priority">Seberapa parah? <b>*</b></label>
+                <select class="select" id="priority" name="priority" required></select>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="gamepad-2"></i></span>
+              <div><h2>Lingkungan permainan</h2><p>Info ini membantu developer mereproduksi masalah.</p></div>
+            </header>
+            <div class="fields">
+              <div class="field">
+                <label for="edition">Edisi Minecraft <b>*</b></label>
+                <select class="select" id="edition" name="edition" required>
+                  <option>Java Edition</option>
+                  <option>Bedrock Edition</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="version">Versi game <b>*</b></label>
+                <input class="input" id="version" name="version" required placeholder="1.21.1">
+              </div>
+              <div class="field">
+                <label for="platform">Platform <b>*</b></label>
+                <select class="select" id="platform" name="platform" required>
+                  <option>Windows</option>
+                  <option>macOS</option>
+                  <option>Linux</option>
+                  <option>Android</option>
+                  <option>iOS</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="realm">Realm <b>*</b></label>
+                <select class="select" id="realm" name="realm" required>
+                  <option>OneBlock SlimeFun</option>
+                  <option>OneBlock Classic</option>
+                  <option>Tycoon</option>
+                  <option>Survival SlimeFun</option>
+                  <option>Survival RPG</option>
+                  <option>Earth</option>
+                  <option>Survival War</option>
+                  <option>Arena PVP</option>
+                  <option>Semi Vanilla</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="when">Kapan terjadi?</label>
+                <input class="input" type="datetime-local" id="when" name="when">
+              </div>
+              <div class="field">
+                <label for="coords">Koordinat</label>
+                <input class="input mono" id="coords" name="coords" placeholder="x: 117  y: 66  z: -156">
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="file-text"></i></span>
+              <div><h2>Detail dan langkah reproduksi</h2><p>Jelaskan apa yang terjadi dan bagaimana mengulanginya.</p></div>
+            </header>
+            <div class="fields">
+              <div class="field field--full">
+                <label for="description">Deskripsi masalah <b>*</b></label>
+                <textarea class="textarea" id="description" name="description" required placeholder="Ceritakan apa yang terjadi dengan bahasamu sendiri…"></textarea>
+              </div>
+              <div class="field field--full">
+                <label for="steps">Langkah reproduksi <b>*</b></label>
+                <textarea class="textarea" id="steps" name="steps" rows="5" required placeholder="1. Masuk ke Survival&#10;2. Buka area klaim&#10;3. …"></textarea>
+                <span class="hint">Satu langkah per baris.</span>
+              </div>
+              <div class="field">
+                <label for="expected">Hasil yang diharapkan <b>*</b></label>
+                <textarea class="textarea" id="expected" name="expected" required></textarea>
+              </div>
+              <div class="field">
+                <label for="actual">Hasil aktual <b>*</b></label>
+                <textarea class="textarea" id="actual" name="actual" required></textarea>
+              </div>
+              <div class="field">
+                <label for="frequency">Seberapa sering terjadi?</label>
+                <select class="select" id="frequency" name="frequency">
+                  <option>Selalu</option>
+                  <option>Sering</option>
+                  <option>Kadang-kadang</option>
+                  <option>Sekali saja</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <header class="section__head">
+              <span class="section__icon"><i data-lucide="link-2"></i></span>
+              <div><h2>Tautan bukti</h2><p>Bagikan screenshot atau video melalui tautan.</p></div>
+            </header>
+            <div class="fields">
+              <div class="field field--full">
+                <label for="evidence-link">URL bukti <span class="muted">(opsional)</span></label>
+                <input class="input" type="url" id="evidence-link" name="evidenceLink" autocomplete="url" placeholder="https://…">
+                <span class="hint">Pastikan tim dapat membuka tautan. Jangan unggah file langsung ke laporan.</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="form-footer">
+            <label class="check">
+              <input type="checkbox" name="confirm" required>
+              <span>Saya sudah memastikan laporan serupa belum ada dan data yang saya kirim sudah benar.</span>
+            </label>
+            <div class="form-actions">
+              <span class="hint">* Wajib diisi</span>
+              <div>
+                <button class="btn" type="button" id="save-draft">Simpan draf</button>
+                <button class="btn btn--primary" type="submit"><i data-lucide="send"></i>Kirim laporan</button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Contoh judul</h2></div>
+            <div class="card__body stack">
+              <p class="example example--good"><i data-lucide="check"></i>Hopper tidak memindahkan item di area klaim</p>
+              <p class="example example--bad"><i data-lucide="x"></i>Hopper rusak, tolong diperbaiki!!</p>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Laporan yang mudah ditindak</h2></div>
+            <ul class="card__body tips">
+              <li><i data-lucide="check"></i>Judul spesifik, bukan sekadar “bug”.</li>
+              <li><i data-lucide="check"></i>Satu laporan untuk satu bug.</li>
+              <li><i data-lucide="check"></i>Sertakan langkah yang bisa diulang.</li>
+              <li><i data-lucide="check"></i>Sertakan tautan screenshot atau video yang bisa dibuka tim.</li>
+            </ul>
+          </section>
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Setelah dikirim</h2></div>
+            <div class="card__body">
+              <p class="muted">Laporanmu berstatus <span class="badge" data-v="Baru">Baru</span> sampai ditinjau tim. Pantau perkembangannya dari halaman laporan.</p>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="footer" id="footer"></footer>
+    </main>
+  </div>
+</body>
+</html>

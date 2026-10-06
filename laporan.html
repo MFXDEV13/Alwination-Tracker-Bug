@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Detail laporan — Alwination</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script defer src="https://unpkg.com/lucide@latest"></script>
+  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/auth.js"></script>
+</head>
+<body class="auth-pending" data-nav="reports">
+  <header class="topbar" id="topbar"></header>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <a class="back" href="index.html"><i data-lucide="chevron-left"></i>Semua laporan <span>/</span> <strong id="breadcrumb-ticket">Detail laporan</strong></a>
+
+      <div class="detail-head">
+        <div>
+          <div class="detail-head__tags">
+            <span class="mono muted" id="report-ticket">Memuat…</span>
+            <span class="badge" id="report-status" data-v="Baru">Baru</span>
+            <span class="prio" id="report-priority" data-v="Sedang">Sedang</span>
+            <span class="muted" id="report-category">Memuat…</span>
+          </div>
+          <h1 id="report-title">Memuat laporan…</h1>
+          <p class="muted" id="report-meta"></p>
+        </div>
+        <div class="detail-head__actions">
+          <button class="btn" id="follow"><i data-lucide="bell"></i><span>Ikuti laporan</span></button>
+          <button class="btn" id="share"><i data-lucide="share-2"></i>Bagikan</button>
+        </div>
+      </div>
+
+      <div class="notice">
+        <i data-lucide="wrench"></i>
+        <p id="report-notice">Memuat status laporan…</p>
+        <a href="#riwayat">Lihat riwayat →</a>
+      </div>
+
+      <div class="layout">
+        <div class="stack">
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Apa yang terjadi?</h2></div>
+            <div class="card__body">
+              <p id="report-description">Memuat deskripsi…</p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Langkah reproduksi</h2></div>
+            <div class="card__body">
+              <ol class="steps" id="report-steps"></ol>
+            </div>
+            <div class="card__body compare">
+              <div><h4>Hasil yang diharapkan</h4><p id="report-expected"></p></div>
+              <div><h4>Hasil aktual</h4><p id="report-actual"></p></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Tautan bukti</h2></div>
+            <div class="card__body" id="report-evidence"><p class="muted">Tidak ada tautan bukti.</p></div>
+          </section>
+
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Diskusi</h2><span class="eyebrow" id="comment-count">0 komentar</span></div>
+            <div class="card__body">
+              <div id="comments"></div>
+
+              <form class="comment-form" id="comment-form">
+                <textarea class="textarea" name="body" rows="3" placeholder="Tambahkan informasi atau bantu perjelas laporan ini…" required></textarea>
+                <div>
+                  <span class="hint">Jaga komentar tetap sopan dan relevan.</span>
+                  <button class="btn btn--primary" type="submit"><i data-lucide="send"></i>Kirim komentar</button>
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+
+        <aside class="stack">
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Informasi laporan</h2></div>
+            <div class="card__body">
+              <dl class="kv">
+                <dt>Nomor</dt><dd class="mono" id="info-ticket">—</dd>
+                <dt>Pelapor</dt><dd id="info-author">—</dd>
+                <dt>Status</dt><dd><span class="badge" id="info-status" data-v="Baru">Baru</span></dd>
+                <dt>Prioritas</dt><dd><span class="prio" id="info-priority" data-v="Sedang">Sedang</span></dd>
+                <dt>Kategori</dt><dd id="info-category">—</dd>
+                <dt>Dilaporkan</dt><dd id="info-created">—</dd>
+                <dt>Target perbaikan</dt><dd>Belum ditentukan</dd>
+              </dl>
+              <p class="hint">Mengalami bug yang sama? Beri tahu kami tanpa membuat laporan baru.</p>
+              <button class="btn btn--block" id="me-too" data-count="9"><i data-lucide="thumbs-up"></i>Saya juga mengalami · <span id="me-too-count">9</span></button>
+              <button class="btn btn--danger btn--block" id="delete-report" type="button" hidden><i data-lucide="trash-2"></i>Hapus laporan</button>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card__head"><h2 class="card__title">Lingkungan Minecraft</h2></div>
+            <div class="card__body">
+              <dl class="kv">
+                <dt>Edisi</dt><dd id="info-edition">—</dd>
+                <dt>Versi game</dt><dd class="mono" id="info-version">—</dd>
+                <dt>Platform</dt><dd id="info-platform">—</dd>
+                <dt>Mode / Realm</dt><dd id="info-realm">—</dd>
+                <dt>Koordinat</dt><dd class="mono" id="info-coords">—</dd>
+                <dt>Frekuensi</dt><dd id="info-frequency">—</dd>
+              </dl>
+            </div>
+          </section>
+
+          <section class="card" id="riwayat">
+            <div class="card__head"><h2 class="card__title">Riwayat status</h2></div>
+            <div class="card__body">
+              <ol class="timeline" id="report-history"></ol>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="footer" id="footer"></footer>
+    </main>
+  </div>
+</body>
+</html>
