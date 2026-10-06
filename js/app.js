@@ -647,16 +647,20 @@ function initNotifications() {
 }
 
 /* ---------- Halaman admin ---------- */
+const accessRow = item => `
+  <li class="access-row">
+    <span class="access-email">${esc(item.email)}</span>
+    <span class="badge" data-v="${esc(item.role)}">${esc(item.role)}</span>
+    ${item.source === 'manual'
+      ? `<button class="icon-btn" type="button" data-del="${esc(item.email)}" aria-label="Hapus akses">${icon('trash-2')}</button>`
+      : `<span class="tag-source">${item.source === 'owner' ? 'pemilik' : 'env'}</span>`}
+  </li>`;
+
 async function loadAccess() {
   try {
     const { access } = await apiRequest('/api/access');
-    $('#access-list').innerHTML = access.map(item => `
-      <li class="access-row" data-email="${esc(item.email)}">
-        <span class="access-email">${esc(item.email)}</span>
-        <span class="badge" data-v="${esc(item.role)}">${esc(item.role)}</span>
-        <button class="icon-btn" type="button" data-del="${esc(item.email)}" aria-label="Hapus akses">${icon('trash-2')}</button>
-      </li>`).join('')
-      || '<li class="muted">Belum ada akses tambahan. Akses dasar diambil dari env TRUSTED_EMAILS / ADMIN_EMAILS.</li>';
+    $('#access-list').innerHTML = access.map(accessRow).join('')
+      || '<li class="muted">Belum ada akses tambahan.</li>';
   } catch (error) {
     $('#access-list').innerHTML = `<li class="muted">${esc(reportErrorMessage(error))}</li>`;
   }
