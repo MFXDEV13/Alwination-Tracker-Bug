@@ -36,13 +36,15 @@
           <div class="card__body">
             <form class="access-form" id="access-form">
               <input class="input" name="email" type="email" required autocomplete="off" placeholder="email@contoh.com">
+              <input class="input" name="username" required maxlength="24" autocomplete="off" placeholder="username Minecraft">
               <select class="select" name="role" aria-label="Role akses">
                 <option value="trusted">Trusted</option>
                 <option value="admin">Admin</option>
               </select>
-              <button class="btn btn--primary" type="submit"><i data-lucide="plus"></i>Tambah</button>
+              <button class="btn btn--primary" type="submit"><i data-lucide="plus"></i><span>Tambah</span></button>
+              <a class="access-cancel" id="access-cancel" href="#" hidden>Batal</a>
             </form>
-            <p class="hint">Daftar menampilkan seluruh akun berakses: dari env (tag <em>env</em>) dan akun pemilik <em>(pemilik)</em> bersifat hanya-baca; tambah/hapus akun berpengaruh langsung tanpa menyentuh .env.</p>
+            <p class="hint">Username Minecraft wajib diisi dan dipakai sebagai nama penulis laporan/komentar akun tersebut. Env <em>(env)</em> dan pemilik <em>(pemilik)</em> hanya-baca untuk peran, tapi username-nya tetap bisa diubah: klik ikon pensil.</p>
             <ul class="access-list" id="access-list"></ul>
           </div>
         </section>

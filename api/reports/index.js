@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { requireTrustedUser } from '../_lib/auth.js';
+import { displayName, requireTrustedUser } from '../_lib/auth.js';
 import { getDatabase } from '../_lib/mongo.js';
 import { getFollowedReportIds, serializeDocument, sendServerError, validateReport } from '../_lib/reports.js';
 
@@ -32,13 +32,13 @@ export default async function handler(req, res) {
         _id: id,
         ...validated,
         ticketId: `ALW-${id.toHexString().slice(-8).toUpperCase()}`,
-        author: user.name || user.email,
+        author: displayName(user),
         authorEmail: user.email,
         status: 'Baru',
         comments: 0,
         createdAt: now,
         updatedAt: now,
-        history: [{ status: 'Baru', author: user.name || user.email, authorEmail: user.email, at: now }],
+        history: [{ status: 'Baru', author: displayName(user), authorEmail: user.email, at: now }],
       };
       await reports.insertOne(report);
       await (await getDatabase()).collection('notifications').insertOne({

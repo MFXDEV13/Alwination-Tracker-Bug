@@ -43,14 +43,17 @@ async function verifyAccess(user) {
 
 function renderProfile(user) {
   const update = () => {
+    const name = document.querySelector('#profile-name');
     const email = document.querySelector('#profile-email');
     const avatar = document.querySelector('#profile-avatar');
-    if (email) email.textContent = user.email || user.displayName || 'Akun Google';
-    if (avatar) avatar.textContent = (user.displayName || user.email || '?')
+    const label = user.displayName || user.email || 'Akun Google';
+    if (name) name.textContent = user.displayName || user.email || 'Akun Google';
+    if (email) email.textContent = user.email || '';
+    if (avatar) avatar.textContent = label
       .trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
   };
 
-  if (!document.querySelector('#profile-email')) document.addEventListener('DOMContentLoaded', update, { once: true });
+  if (!document.querySelector('#profile-name')) document.addEventListener('DOMContentLoaded', update, { once: true });
   else update();
 }
 

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { requireTrustedUser } from '../../_lib/auth.js';
+import { displayName, requireTrustedUser } from '../../_lib/auth.js';
 import { getDatabase, getMongoClient } from '../../_lib/mongo.js';
 import { parseReportId, serializeDocument, sendServerError } from '../../_lib/reports.js';
 
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         _id: new ObjectId(),
         reportId,
         body,
-        author: user.name || user.email,
+        author: displayName(user),
         authorEmail: user.email,
         createdAt: new Date(),
       };

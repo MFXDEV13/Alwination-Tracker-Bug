@@ -30,6 +30,19 @@ async function getAccessEntry(email) {
   }
 }
 
+async function getUsername(email) {
+  try {
+    const entry = await getAccessEntry(email);
+    const username = entry?.username;
+    return typeof username === 'string' && username.trim() ? username.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+/* Nama yang ditampilkan: username Minecraft (jika ada) > nama Google > email. */
+export const displayName = user => (user?.username || user?.name || user?.email || 'Pengguna');
+
 export async function getAccessLevel(email) {
   email = (email || '').toLowerCase();
   if (!email) return null;
@@ -70,6 +83,7 @@ export async function requireTrustedUser(req, res) {
     res.status(403).json({ error: 'This account is not allowed to access reports.' });
     return null;
   }
+  user.username = await getUsername(user.email);
   return user;
 }
 

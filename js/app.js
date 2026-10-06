@@ -132,7 +132,8 @@ function renderShell() {
           <span class="avatar" id="profile-avatar">?</span><span>Profil</span>${icon('chevron-down')}
         </button>
         <div class="profile-menu" id="profile-menu" hidden>
-          <strong id="profile-email">Memuat akun…</strong>
+          <strong id="profile-name">Memuat akun…</strong>
+          <span class="profile-menu__sub" id="profile-email"></span>
           <button id="sign-out" type="button">${icon('log-out')}Keluar</button>
         </div>
       </div>
@@ -606,6 +607,10 @@ async function loadProfile() {
       try {
         const { profile } = await apiRequest('/api/me');
         PROFILE = profile;
+        const nameEl = $('#profile-name');
+        const emailEl = $('#profile-email');
+        if (nameEl) nameEl.textContent = profile.username || profile.name;
+        if (emailEl) emailEl.textContent = profile.email;
         PROFILE_STATE = 'ready';
         return profile;
       } catch (error) {
@@ -696,12 +701,17 @@ function initNotifications() {
 
 /* ---------- Halaman admin ---------- */
 const accessRow = item => `
-  <li class="access-row">
-    <span class="access-email">${esc(item.email)}</span>
+  <li class="access-row" data-username="${esc(item.username || '')}" data-role="${esc(item.role)}">
+    <span class="access-main">
+      <span class="access-email">${esc(item.email)}</span>
+      <span class="access-username">${item.username ? `@${esc(item.username)}` : '<em>belum ada username</em>'}</span>
+    </span>
     <span class="badge" data-v="${esc(item.role)}">${esc(item.role)}</span>
+    ${item.source === 'manual' ? '' : `<span class="tag-source">${item.source === 'owner' ? 'pemilik' : 'env'}</span>`}
+    <button class="icon-btn" type="button" data-edit="${esc(item.email)}" aria-label="Ubah akses">${icon('pencil')}</button>
     ${item.source === 'manual'
       ? `<button class="icon-btn" type="button" data-del="${esc(item.email)}" aria-label="Hapus akses">${icon('trash-2')}</button>`
-      : `<span class="tag-source">${item.source === 'owner' ? 'pemilik' : 'env'}</span>`}
+      : ''}
   </li>`;
 
 async function loadAccess() {
@@ -720,18 +730,30 @@ function initAdminAccess() {
   if (!form) return;
   loadAccess();
 
+  const button = $('button[type="submit"]', form);
+  const cancel = $('#access-cancel');
+  const buttonLabel = $('span', button);
+  const setEditing = editing => {
+    buttonLabel.textContent = editing ? 'Simpan' : 'Tambah';
+    cancel.hidden = !editing;
+  };
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
-    const button = $('button[type="submit"]', form);
     button.disabled = true;
     try {
       await apiRequest('/api/access', {
         method: 'POST',
-        body: JSON.stringify({ email: form.elements.email.value, role: form.elements.role.value }),
+        body: JSON.stringify({
+          email: form.elements.email.value,
+          username: form.elements.username.value,
+          role: form.elements.role.value,
+        }),
       });
       form.reset();
+      setEditing(false);
       await loadAccess();
-      toast('Akses email ditambahkan.');
+      toast('Akses email disimpan.');
     } catch (error) {
       toast(reportErrorMessage(error));
     } finally {
@@ -739,7 +761,23 @@ function initAdminAccess() {
     }
   });
 
+  cancel.addEventListener('click', event => {
+    event.preventDefault();
+    form.reset();
+    setEditing(false);
+  });
+
   $('#access-list').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-edit]');
+    if (editButton) {
+      const row = editButton.closest('.access-row');
+      form.elements.email.value = editButton.dataset.edit;
+      form.elements.username.value = row?.dataset.username || '';
+      form.elements.role.value = row?.dataset.role || 'trusted';
+      form.elements.username.focus();
+      setEditing(true);
+      return;
+    }
     const button = event.target.closest('[data-del]');
     if (!button) return;
     if (!confirm(`Hapus akses ${button.dataset.del}?`)) return;

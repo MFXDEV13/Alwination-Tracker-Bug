@@ -1,4 +1,4 @@
-import { requireAdmin, requireTrustedUser } from '../_lib/auth.js';
+import { displayName, requireAdmin, requireTrustedUser } from '../_lib/auth.js';
 import { getDatabase, getMongoClient } from '../_lib/mongo.js';
 import { getFollowedReportIds, parseReportId, sendServerError, serializeDocument, STATUSES } from '../_lib/reports.js';
 
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         { _id: id },
         {
           $set: { status, updatedAt: now },
-          $push: { history: { status, author: user.name || user.email, authorEmail: user.email, at: now } },
+          $push: { history: { status, author: displayName(user), authorEmail: user.email, at: now } },
         },
       );
       if (result.matchedCount !== 1) {

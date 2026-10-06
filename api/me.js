@@ -15,6 +15,7 @@ export default async function handler(req, res) {
     profile: {
       email: user.email,
       name: user.name || user.email,
+      username: user.username || null,
       isTrusted: true,
       isAdmin: level === 'admin',
       accessLevel: level,
