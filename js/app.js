@@ -47,10 +47,10 @@ function timestampMillis(timestamp) {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
 }
 
-async function apiRequest(path, options = {}) {
+async function apiRequest(path, options = {}, attempts = 0) {
   const user = auth.currentUser;
   if (!user) throw Object.assign(new Error('Silakan masuk kembali.'), { status: 401 });
-  const token = await user.getIdToken();
+  const token = await user.getIdToken(attempts > 0);
   const response = await fetch(path, {
     ...options,
     headers: {
@@ -60,6 +60,7 @@ async function apiRequest(path, options = {}) {
     },
   });
   const result = await response.json().catch(() => ({}));
+  if (response.status === 401 && attempts < 1) return apiRequest(path, options, attempts + 1);
   if (!response.ok) throw Object.assign(new Error(result.error || 'Permintaan ke server gagal.'), { status: response.status });
   return result;
 }
@@ -466,14 +467,25 @@ function initReportForm() {
   }
   textFields.forEach(el => { if (typeof draft[el.name] === 'string') el.value = draft[el.name]; });
 
-  $('#save-draft').addEventListener('click', () => {
+  const saveDraft = () => {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(Object.fromEntries(textFields.map(el => [el.name, el.value]))));
+  };
+
+  let draftTimer;
+  form.addEventListener('input', () => {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 500);
+  });
+
+  $('#save-draft').addEventListener('click', () => {
+    saveDraft();
     toast('Draf disimpan di browser ini.');
   });
 
   // --- Kirim: validasi `required` sudah ditangani browser sebelum event ini jalan ---
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    saveDraft();
     const submitButton = $('button[type="submit"]', form);
     submitButton.disabled = true;
     try {

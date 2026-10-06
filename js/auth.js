@@ -15,23 +15,26 @@ const showMessage = text => {
 };
 
 /* Verifikasi akses lewat server (sumber kebenaran: env + koleksi access MongoDB) */
+async function fetchMe(user, forceRefresh = false) {
+  const token = await user.getIdToken(forceRefresh);
+  return fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+}
+
 async function verifyAccess(user) {
   try {
-    const token = await user.getIdToken();
-    const response = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+    let response = await fetchMe(user);
+    if (response.status === 401) response = await fetchMe(user, true);
     if (response.ok) return true;
-    let serverError = '';
-    try {
-      serverError = (await response.json()).error || '';
-    } catch {
-      /* Abaikan body bukan JSON. */
+
+    if (response.status === 403) {
+      await signOut(auth);
+      showMessage('Email ini belum diizinkan mengakses pusat laporan. Hubungi admin untuk menambahkan akses.');
+      return false;
     }
-    await signOut(auth);
-    if (response.status === 404) {
-      showMessage('API belum ter-deploy di Vercel. Deploy ulang lalu coba lagi.');
-    } else {
-      showMessage(serverError || 'Email ini belum diizinkan mengakses pusat laporan. Hubungi admin untuk menambahkan akses.');
-    }
+
+    showMessage(response.status === 404
+      ? 'API belum ter-deploy di Vercel. Deploy ulang lalu coba lagi.'
+      : `Sesi login berakhir. Silakan masuk kembali. (${response.status})`);
     return false;
   } catch {
     return true;
