@@ -5,7 +5,12 @@ import { getDatabase } from './mongo.js';
 function getAdminAuth() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) throw new Error('FIREBASE_SERVICE_ACCOUNT is not configured.');
   if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } catch {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT bukan JSON yang valid. Periksa Environment Variables Vercel (harus satu nilai JSON utuh).');
+    }
     if (serviceAccount.private_key) serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     initializeApp({ credential: cert(serviceAccount) });
   }
@@ -44,11 +49,19 @@ export async function requireTrustedUser(req, res) {
     return null;
   }
 
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+    res.status(500).json({ error: 'FIREBASE_SERVICE_ACCOUNT belum dikonfigurasi di server (Environment Variables Vercel).' });
+    return null;
+  }
+
   let user;
   try {
     user = await getAdminAuth().verifyIdToken(token);
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired sign-in token.' });
+  } catch (error) {
+    const message = /FIREBASE_SERVICE_ACCOUNT|JSON|project/i.test(error?.message || '')
+      ? `Konfigurasi server tidak valid: ${error.message}`
+      : 'Invalid or expired sign-in token.';
+    res.status(401).json({ error: message });
     return null;
   }
 
