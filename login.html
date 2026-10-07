@@ -17,7 +17,7 @@
   <script defer src="https://unpkg.com/lucide@latest"></script>
   <script type="module" src="js/auth.js"></script>
 </head>
-<body data-auth-page="login">
+<body class="auth-pending" data-auth-page="login">
   <header class="topbar">
     <a class="brand" href="login.html">
       <img class="brand__image" src="img/alwination-logo.png" alt="Alwination — Pusat laporan bug">
@@ -36,5 +36,5 @@
     </section>
   </main>
   <script>window.lucide && lucide.createIcons();</script>
-</body>
+<script>document.addEventListener("DOMContentLoaded",function(){setTimeout(function(){if(document.body.classList.contains(""))document.body.classList.remove("");},4000);});</script></body>
 </html>

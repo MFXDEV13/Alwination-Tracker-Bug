@@ -936,5 +936,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('#comment-form')) initDetail();
   if ($('#report-form'))  initReportForm();
   if ($('#admin-reports') || $('#access-form')) initAdmin();
+  try{document.body.classList.remove("auth-pending");}catch(e){}
   icons();
 });

@@ -163,3 +163,4 @@ if (!isFirebaseConfigured) {
 if (isLoginPage && new URLSearchParams(location.search).get('error') === 'unauthorized') {
   showMessage('Email ini belum diizinkan mengakses pusat laporan.');
 }
+
