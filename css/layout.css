@@ -14,6 +14,7 @@
 .profile { position: relative; }
 .icon-btn { position: relative; display: grid; place-items: center; flex: none; width: 36px; height: 36px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
 .icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.menu-toggle { display: none; }
 .notif { position: relative; }
 .notif-badge { position: absolute; top: 0; right: 0; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 600 10px/14px var(--mono); animation: notif-pulse 2.4s ease-out infinite, pulse-glow 2.8s ease-out infinite; }
 .notif-badge[hidden] { display: none; }

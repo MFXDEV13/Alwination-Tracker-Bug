@@ -125,6 +125,7 @@ function renderShell() {
       <a class="is-active" href="index.html">Pelacak bug</a>
     </nav>
     <div class="topbar__right">
+      <button class="icon-btn menu-toggle" id="menu-toggle" type="button" aria-label="Buka menu navigasi" aria-expanded="false" aria-controls="sidebar">${icon('menu')}</button>
       <div class="notif">
         <button class="icon-btn" id="notif-bell" type="button" aria-label="Notifikasi" aria-expanded="false" aria-controls="notif-panel">${icon('bell')}<span class="notif-badge" id="notif-badge" hidden></span></button>
         <div class="notif-panel" id="notif-panel" hidden></div>
@@ -926,8 +927,55 @@ function initServerStatus() {
   window.addEventListener('focus', loadServerStatus);
 }
 
+/* ---------- Nav drawer (HP/tablet): tombol hamburger di topbar ---------- */
+function initNavDrawer() {
+  const toggle = $('#menu-toggle');
+  const sidebar = $('#sidebar');
+  if (!toggle || !sidebar) return;
+
+  const setOpen = open => {
+    document.body.classList.toggle('nav-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+    toggle.innerHTML = icon(open ? 'x' : 'menu');
+    icons();
+  };
+  const isOpen = () => document.body.classList.contains('nav-open');
+
+  toggle.addEventListener('click', event => {
+    /* stopPropagation: innerHTML toggle diganti (icon menu↔x), sehingga
+       target lama tak lagi contained di toggle → handler document-click
+       akan mengira klik di luar dan langsung menutup drawer. */
+    event.stopPropagation();
+    setOpen(!isOpen());
+  });
+
+  /* Klik link di drawer → tutup (sebelum pindah halaman/hash) */
+  sidebar.addEventListener('click', event => {
+    if (event.target.closest('a')) setOpen(false);
+  });
+
+  /* Klik overlay / area luar drawer → tutup */
+  document.addEventListener('click', event => {
+    if (!isOpen()) return;
+    if (sidebar.contains(event.target) || toggle.contains(event.target)) return;
+    setOpen(false);
+  });
+
+  /* Escape → tutup */
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && isOpen()) setOpen(false);
+  });
+
+  /* Lewati breakpoint desktop → reset state */
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 860 && isOpen()) setOpen(false);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderShell();
+  initNavDrawer();
   staggerEntrance();
   initNotifications();
   loadProfile();
