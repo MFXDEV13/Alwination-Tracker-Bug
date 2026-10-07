@@ -1,9 +1,4 @@
 /* ---------- 6) Animasi ---------- */
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
@@ -17,21 +12,6 @@
 @keyframes slide-in-left {
   from { opacity: 0; transform: translateX(-16px); }
   to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes slide-in-right {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(.985); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-@keyframes row-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes float {
@@ -55,61 +35,22 @@
   50%      { opacity: .45; }
 }
 
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* ---------- Entrance animasi ---------- */
+/* ---------- Entrance animasi ----------
+   Fail-safe: TANPA opacity:0 sebagai style dasar.
+   Pakai fill-mode "both": sebelum animasi state awal benar (tanpa kedip),
+   sesudah animasi selesai elemen TETAP tampil. Kalau animasi gagal jalan
+   sekalipun, konten tidak pernah bisa stuck tersembunyi. */
 .anim-ready .topbar {
-  opacity: 0;
-  animation: fade-in .4s ease forwards;
+  animation: fade-in .4s ease both;
 }
 
 .anim-ready .sidebar {
-  opacity: 0;
-  animation: slide-in-left .45s cubic-bezier(.22, .8, .36, 1) forwards;
+  animation: slide-in-left .45s cubic-bezier(.22, .8, .36, 1) both;
 }
 
 .anim-ready .main > * {
-  opacity: 0;
-  animation: fade-in-up .5s cubic-bezier(.22, .8, .36, 1) forwards;
+  animation: fade-in-up .5s cubic-bezier(.22, .8, .36, 1) both;
   animation-delay: calc(var(--i, 0) * 70ms);
-}
-
-.anim-ready .page-head {
-  opacity: 0;
-  animation: fade-in-up .6s cubic-bezier(.22, .8, .36, 1) forwards;
-}
-
-.anim-ready .stats .stat,
-.anim-ready .dash__aside .card,
-.anim-ready .side-card,
-.anim-ready .card {
-  opacity: 0;
-  animation: scale-in .42s cubic-bezier(.22, .8, .36, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 60ms);
-}
-
-.anim-ready .table__row,
-.anim-ready .updates li {
-  opacity: 0;
-  animation: row-in .38s ease backwards;
-  animation-delay: calc(var(--i, 0) * 40ms);
-}
-
-.anim-ready .auth-panel {
-  opacity: 0;
-  animation: scale-in .48s cubic-bezier(.22, .8, .36, 1) forwards;
-}
-
-.anim-ready .form-layout > section,
-.anim-ready .form-layout > aside,
-.anim-ready .layout > section,
-.anim-ready .layout > aside {
-  opacity: 0;
-  animation: fade-in-up .48s cubic-bezier(.22, .8, .36, 1) forwards;
-  animation-delay: calc(var(--i, 0) * 60ms);
 }
 
 /* ---------- Micro-interactions ---------- */
@@ -227,21 +168,9 @@ a.table__row:hover {
     scroll-behavior: auto !important;
   }
 
-  .anim-ready .main > *,
   .anim-ready .topbar,
   .anim-ready .sidebar,
-  .anim-ready .page-head,
-  .anim-ready .stats .stat,
-  .anim-ready .dash__aside .card,
-  .anim-ready .side-card,
-  .anim-ready .card,
-  .anim-ready .table__row,
-  .anim-ready .updates li,
-  .anim-ready .auth-panel,
-  .anim-ready .form-layout > section,
-  .anim-ready .form-layout > aside,
-  .anim-ready .layout > section,
-  .anim-ready .layout > aside,
+  .anim-ready .main > *,
   .notice,
   .toast.is-show {
     animation: none !important;
