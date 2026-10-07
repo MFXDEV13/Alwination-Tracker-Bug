@@ -446,7 +446,7 @@ function initDetail() {
     }
     $('#report-notice').textContent = `Status laporan: ${statusText}. Perubahan status terbaru akan ditampilkan di sini.`;
     $('#report-description').textContent = report.description || 'Tidak ada deskripsi.';
-    $('#report-steps').innerHTML = String(report.steps || '').split('\n').map(step => step.trim()).filter(Boolean)
+    $('#report-steps').innerHTML = String(report.steps || '').split('').map(step => step.trim()).filter(Boolean)
       .map(step => `<li>${esc(step.replace(/^\d+[.)]\s*/, ''))}</li>`).join('') || '<li>Tidak ada langkah reproduksi.</li>';
     $('#report-expected').textContent = report.expected || '—';
     $('#report-actual').textContent = report.actual || '—';
@@ -871,7 +871,7 @@ async function initAdmin() {
 /* ---------- 8) Mulai ---------- */
 /* ---------- Status server Minecraft (widget sidebar) ---------- */
 const cleanMOTD = text => String(text ?? '')
-  .split('\n')
+  .split('')
   .map(line => line.replace(/§[0-9A-FK-ORa-fk-or]/g, ''))
   .filter(Boolean)
   .join(' ');
@@ -936,6 +936,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('#comment-form')) initDetail();
   if ($('#report-form'))  initReportForm();
   if ($('#admin-reports') || $('#access-form')) initAdmin();
-  try{document.body.classList.remove("auth-pending");}catch(e){}
-  icons();
+    try{document.body.classList.remove("auth-pending");}catch(e){}  setTimeout(()=>{try{document.body.classList.remove("auth-pending");}catch(e){}}, 400);  setTimeout(()=>{try{document.body.classList.remove("auth-pending");}catch(e){}}, 1200);  icons();
 });

@@ -47,7 +47,7 @@
 .toast { position: fixed; bottom: 24px; left: 50%; z-index: 50; padding: 10px 16px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-2); box-shadow: 0 8px 30px rgba(0, 0, 0, .5); opacity: 0; transform: translate(-50%, 12px); transition: .2s; pointer-events: none; }
 .toast.is-show { opacity: 1; transform: translate(-50%, 0); }
 
-.auth-pending { visibility: hidden !important; }
+.auth-pending { display:none !important; }
 .auth-main { display: grid; place-items: center; min-height: calc(100vh - 60px); padding: 32px; }
 .auth-panel { width: min(100%, 440px); padding: 32px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 .auth-panel h1 { margin: 10px 0 8px; font-size: 24px; line-height: 1.25; }
