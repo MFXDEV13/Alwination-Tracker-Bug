@@ -595,10 +595,28 @@ function staggerEntrance() {
   document.querySelectorAll('.main').forEach(main => {
     [...main.children].forEach((element, index) => element.style.setProperty('--i', index));
   });
+  document.querySelectorAll('.stats').forEach(stats => {
+    [...stats.querySelectorAll('.stat')].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
+  document.querySelectorAll('.dash__aside').forEach(aside => {
+    [...aside.children].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
+  document.querySelectorAll('.sidebar').forEach(sidebar => {
+    [...sidebar.querySelectorAll('.nav-item, .side-card')].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
+  document.querySelectorAll('.table').forEach(table => {
+    [...table.querySelectorAll('.table__row')].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
+  document.querySelectorAll('.updates').forEach(list => {
+    [...list.querySelectorAll('li')].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
+  document.querySelectorAll('.form-layout, .layout').forEach(layout => {
+    [...layout.querySelectorAll('section, aside')].forEach((el,i)=>el.style.setProperty('--i',i));
+  });
   document.body.classList.add('anim-ready');
 }
 
-/* Posisi pengguna dari server (sumber kebenaran akses) */
+/* Posisi pengguna dari server (sumber kebenaran akses) *//* Posisi pengguna dari server (sumber kebenaran akses) */
 let PROFILE_STATE = 'idle';   // 'idle' | 'ready' | 'failed'
 let profilePromise;
 

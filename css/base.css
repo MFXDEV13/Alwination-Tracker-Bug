@@ -1,0 +1,46 @@
+/* =========================================================
+   Alwination — Pusat Laporan Bug
+   ========================================================= */
+
+/* ---------- 1) Token (ubah di sini supaya cocok dengan desainmu) ---------- */
+:root {
+  color-scheme: dark;
+  --bg: #0a0e0c;
+  --surface: #0f1512;
+  --surface-2: #151c18;
+  --border: #1f2a24;
+  --border-strong: #2c3a33;
+  --text: #e8efea;
+  --muted: #8a9a91;
+  --accent: #3ddc84;
+  --accent-ink: #04140a;
+  --accent-soft: rgba(61, 220, 132, .12);
+  --danger: #f2616d;
+  --radius: 12px;
+  --font: "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Warna status & prioritas: satu variabel --c dipakai badge, bar prioritas, dan ikon statistik */
+[data-v="Baru"]         { --c: #6ea8fe; }
+[data-v="Dikonfirmasi"] { --c: #b197fc; }
+[data-v="Dikerjakan"]   { --c: #f5a524; }
+[data-v="Selesai"]      { --c: #3ddc84; }
+[data-v="Kritis"]       { --c: #f2616d; }
+[data-v="Tinggi"]       { --c: #fb8c3c; }
+[data-v="Sedang"]       { --c: #e5c34b; }
+[data-v="Rendah"]       { --c: #6f8178; }
+
+/* ---------- 2) Dasar ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3, h4, p, ul, ol, dl, dd { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+small { display: block; color: var(--muted); font-size: 12px; }
+svg.lucide { width: 16px; height: 16px; flex: none; }
+.mono  { font-family: var(--mono); }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
